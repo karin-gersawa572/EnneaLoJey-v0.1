@@ -1,0 +1,58 @@
+Disclaimer: Gue gatau, gue juga kurang banyak dengerin lagu ini sih. Ya, ini interpretasi pribadi aja. 
+
+Sumber lagu dari:
+https://music.youtube.com/watch?v=dJYgtz8U0bo&si=ppoiS4kYpZ8r3Zp2
+
+Atau bisa cari:
+"Masih Hatiku - Arsy Widianto & Tiara Andini"
+
+[LIVE 20261115 - 2233]
+> Dialog = "Adakah hatimu masih hatiku?"
+> Parsed = "spN6bx7(2xP6) --- sp4bx13(6xQx2,m13) --- sx4#x13(6Qx1r,m13) --- sp4(4QN9)"
+> EnneaLoJey = "Menyakitkan... Melihat SP4 yang sudah countertype, harus bertahan lagi hingga SP2. Double countertype karena perasaan yang seolah dipermainkan. Susahnya E6 hanya untuk memastikan cinta itu tidak lepas. Tubuhnya (N9) harus menghadapi penderitaan dalam diam itu (sp4), sampai cinta itu mempengaruhi hidupnya secara keseluruhan (m13). E1 sudah digunakan untuk menuntut kepastiannya. Tapi, tidak ada jawaban (>>tanpa pernah jelas akhirnya<<). spN6b7 juga countertype berat di spN6bx7 (hasilnya SP3). Dia merasa dirinya tidak cukup waspada mengawasi cinta itu (khas E6), hingga dia merasa kapasitas kewaspadaannya sendiri (b7) kurang baik untuk mengetahui kenyataannya sejak awal. Batsu (x) yang ditempel ke teks terdekat, menandakan adanya kegagalan fungsi pada teks yang ditempelkan itu."
+
+[20261115 - 2321]
+Ganti lagi dah:
+sx4bxN17 = "Kemana hati kau bawa?" // SX4 berani bertanya, tapi SX1 tetaplah berani bertanya begini. 
+sx4bxN16 = "Tanpa pernah jelas akhirnya" // N7 bisa diibaratkan sebagai "catalog", yang gaada bedanya dengan "Where's the start, and where's the end?"
+sp4#x19 = "Ku cemburu, namun hanya sebatas itu" // SP4 masih menahan diri dengan bilang "hanya sebatas itu", tapi dia gak sadar sudah mengungkapkan kecemasannya bahwa "aku cemburu" di SP1. Seingetku, SP1 itu secara umum memang "Worry".
+sx4bx19(6QxN1r) = "Adakah hatimu, masih hatiku" // Di dunia nyata, pertanyaan kayak gini jelaslah tergolong nekat. Berani nanya ginian, awas ditampar ayang loh. Makanya ini masuknya ke SX2. SX2 memanglah penuntut yang kuat, bukan SX1. SX1 justru disukai karena dia berani melawan rasa takutnya sendiri untuk bertanya. Tapi, sampai sekarang pun, SX2 dan SX1 memang sangat sulit dibedakan, karena ruangnya sangat sempit diantara 4b1 dan 4#1. Btw, disini 6Q memaksa N1 agar dia mau menuruti (r) apa yang dibutuhkan E6. N1 bisa diibaratkan "Metode" atau "Step by step". Jika N1 tidak memberikan metode yang baik, jelaslah E6 akan menuntutnya (Q + r) untuk merubah dirinya agar sesuai dengan harapan E6.
+
+Makin jelas kayaknya ya? EnneaLoJey sebenarnya ada di fenomena sosiologis, hanya saja sangat rumit untuk diolah. Perbedaan yang sangat tipis saja dapat mempengaruhi status countertype seseorang, yang dapat sedikit mengubah hasil akhirnya.
+
+Mirip kayak teka-teki aturan berbahasa Jepang yang membedakan partikel hajimaranai (=N - Nature - Salahnya alam) dan hajimenai (=Enneagram biasa - Salahnya seseorang). Sempit banget, sulit dibedakan. Eh, tapi gak 100% mirip sih. 
+
+N (nature) di EnneaLoJey hanya dipakai untuk mention sesuatu alam saja. Tapi, jangan salah loh. N juga bisa dipakai untuk menuntut orang lain. Kamu nuntut N1 (metode) orang lain? Bisa. Bilang aja:
+> "Kamu gak bisa bawa itu kesana!" = "sx7#N11"
+
+atau kalo pake batsu:
+> "Kamu bandel ya?? Awas salah koreografinya!" = "sx7#xN11"
+
+Kita juga bisa protes orang sambil bawa daftar to-do list, karena N7 tadi adalah catalog:
+> "Kamu bandel ya?? Itu gaada di daftar!!"
+= "sxN7#xN11"
+> "Eh, gak boleh, itu bukan tugas kita!" = "sxN7#N11"
+
+========
+© 2026 Gersawa Labs - ANDFEEL CODE
+20261115-717938_Karin-9961-v0.0
+-----
+.tsr file also available in public to verify this file. 
+TTD (oleh: XXXX): "XXXXでも嬉しいなぁー --- ゲルサワね〜 XX.XX点ですね。"
+========
+
+========
+
+CATATAN:
+EnneaLoJey berasal dari Enneagram yang telah kami falsifikasi berkali-kali, melalui pengamatan selama dua tahun selama masa sekolah sejak tahun kedua, hingga tahun ketiga. Kami juga membuat lagu, tapi untuk sekarang kami masih merahasiakannya. 
+
+YANG TIDAK BOLEH hanyalah menyalin cerita AndFeel Code secara mentah (*disclaimer: tidak ada pembatasan untuk konten selain AndFeel Code. Jadi, aman aja selain yang ada di folder "AndFeel Story"), menggunakan ulang tanpa modifikasi yang berarti, atau meng-klaimnya sebagai karya kalian sendiri secara copy-paste sembarangan. Lisensi untuk EnneaLoJey adalah 100% BEBAS DIGUNAKAN, karena logika (*atau pengetahuan) memang tidak bisa diberikan hak cipta (copyright). 
+
+Mungkin boleh berikan saja credit saat kalian membahas atau mempromosikan EnneaLoJey di tempat lain. Hargai kami sebagai sumber pertamanya. Dapat kalian lakukan dengan share link, ataupun screenshot, tanpa permintaan uang sepeserpun (kecuali karya/cerita/musik dari AndFeel code yang memang memiliki hak cipta). 
+
+Konten cover lagu (歌ってみた) masih diperbolehkan (*include credit). Fan art diperbolehkan (bebas tanpa kredit). Konten reaction (動画) dan penggunaannya untuk sampel penelitian diperbolehkan (*include credit). 
+
+Informasi mengenai AndFeel Code:
+AndFeel Code rencananya akan jadi cerita fiksi. Makanya itu aja yang kena copyright, karena masuknya udah ke ranah "seni original", bukan "logika universal" lagi. 
+
+========
