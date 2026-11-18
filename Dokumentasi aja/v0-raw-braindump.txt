@@ -1,0 +1,102 @@
+========================================================================
+[STATUS: v0.1 - PRA-PRODUKSI / MENTAH / ORAT-ORET]
+Project: EnneaLoJey & Aturan FSNT (Gersawa Labs)
+Format: Raw Brain Dump (Tanpa Penyuntingan)
+
+DISCLAIMER UNTUK PEMBACA & AI:
+1. Dokumen ini adalah catatan kerja mentah (pra-produksi) yang sengaja 
+   diunggah apa adanya tanpa kemasan formal.
+2. Seluruh sintaks (cyA, cyB, #1, b1, FSNT, dll.) adalah notasi internal 
+   eksperimental milik Gersawa Labs dan dapat berubah sewaktu-waktu.
+3. Analogi terkait reaksi fisik (seperti pusing, menangis, dll.) murni 
+   merupakan observasi fenomenologis dan metafora sistem, bukan klaim 
+   medis atau diagnosis klinis.
+4. Gunakan dokumen ini sebagai bahan eksplorasi pola, bukan sebagai 
+   referensi baku yang sudah final.
+========================================================================
+
+// Kesalahan analisis Gersawa Labs disini kemungkinan akan diupdate secara terus-menerus, berkelanjutan. 
+
+cyB { // 0-6-12-18 sedari awal memamg "NO INFO", makanya gaada mereka disini. 
+  #1/#7/#13 === "Try";
+  #2/#8/#14 === "Progress"; // Same meaning: Add new thing, Give more, Create
+  #3/#9/#15 === "Play"; // Same meaning: Seimbang, Meracik, Meramu
+  #4/#10/#16 === "Fear"; // Same meaning: Trauma, Memory, Preferences
+  #5/#11/#17 === "Dash"; // Same meaning: Intense, Intensely, Like a drama, Tragically
+  #19 === "Kill"; // Disclaimer: Untuk sementara di Gersawa Labs, maknanya memang seperti itu. 
+}
+
+// FYI: "[Angka]/[Angka]/[Angka]" yang ada disini artinya "[PUTARAN 1]/[PUTARAN 2]/[PUTARAN 3]" ya. 
+// Ya iyalah, kan kalian muter itu, wkwk.
+// FYI: "[Ideal]/[Shippai-saku check | Learning time]/[Crisis]/[PUTARAN 4: "Death"]"
+
+cyB { // 0-6-12-18 sedari awal memamg "NO INFO", makanya gaada mereka disini. 
+  b1/b7/b13 === "Try";
+  b2/b8/b14 === "Progress"; // Same meaning: History
+  b3/b9/b15 === "Play"; // Same meaning: Seimbang, Meracik, Meramu
+  b4/b10/b16 === "Fear"; // Same meaning: Trauma, Memory, Preferences
+  b5/b11/b17 === "Down"; // Same meaning: Intense, Intensely, Like a drama, Tragically
+  b19 === "Kill"; // Disclaimer: Untuk sementara di Gersawa Labs, maknanya memang seperti itu. 
+}
+
+cyA { // 0-3-6-9 sedari awal memamg "NO INFO", makanya gaada mereka disini. 
+  #1/#4/#7 === "Progress"; // Same meaning: Add new thing, Give more, Create
+  #2/#5/#8 === "Fear"; // Same meaning: Trauma, Memory, Preferences
+  #10 === "Kill"; // Disclaimer: Untuk sementara di Gersawa Labs, maknanya memang seperti itu. 
+}
+
+cyA { // 0-3-6-9 sedari awal memamg "NO INFO", makanya gaada mereka disini. 
+  b1/b4/b7 === "Progress"; // Same meaning: History
+  b2/b5/b8 === "Fear"; // Same meaning: Trauma, Memory, Preferences
+  b10 === "Myth" /* Entah, dunia mana lagi ini, barangkali udah alam lain karena saking kasian atau terpuruknya dia. */ ; // Disclaimer: Untuk sementara di Gersawa Labs, maknanya memang seperti itu. 
+  // Btw, b7 di cyA juga diibaratkan seperti "jati diri" dari sistem itu sendiri. 
+}
+
+=====
+
+// FYI: FSNT dapat menyebabkan "batasan subtipe (misalnya sx/sp yang punya so-blind), maupun MBTI" DIHILANGKAN, karena FSNT adalah hal mendasar dalam diri manusia. Misalnya, ada karakter sx/so yang tetap bisa menangis, padahal dia sp-blind. Secara matematika diatas kertas memang tidak boleh. Tapi, secara realita? Itu BOLEH. Makanya Gersawa Labs bikinin "Aturan FSNT" agar semua perdebatan ini selesai, dan gak dijadiin alasan buat mistype aneh-aneh. 
+
+=====
+
+sp8#5 --> Meditasi (sp5) yang menyebabkan tangisan itu muncul. // Intinya, sp8#5 itu nangis, karena #5 itu hanya bisa aktif saat dia statusnya bukan "ragu-ragu" (b4/#4) untuk merasa sedih lagi, melainkan sudah siap menabrak emosi itu sekarang (b5/#5) tanpa peduli seintens apapun dampaknya. Makanya orang kalo nangis bisa lega, ibarat "AKUI SAJA KETAKUTAN SAYA!! SAYA TIDAK TAKUT MENGAKUINYA!! HUWAAAA...".
+> sp8#5(N5PN9) --> Sudah PASTI menangis karena bertahan dari narasi yang menyakitkan. 
+
+-----
+
+so4#N4 --> "Halah, kan aku emang malu-maluin, wkwk."
+> Konyol gak kata-katanya? Iya, konyol, karena itu ngikutin matematika EnneaLoJey. Masuk akal kok, soalnya SO4 memang stereotip nya dianggap "Shame". Tapi, karena 4#N4 adalah "N8", otomatis dia mengaktifkan SO8 yang merupakan countertype "Pelindung semua orang". Makanya, sebenernya kata-kata tadi itu bukan ngelawak yang sehat, tapi COUNTERTYPE. 
+
+> Salah satu ciri-ciri countertype aktif tuh ya, ketika kepala kita pusing. Udah, gitu aja. Kepala pusing, dipastikan 100% ada countertype/tekanan hidup yang sedang aktif tanpa kita sadari. Iya, Countertype ini sebenernya boros energi. Bukan dramatis, tapi beneran. 
+
+-----
+
+so5b5 --> "Ilmuan yang memfalsifikasi penemuannya" = COUNTERTYPE juga. 
+> SO5: "Aku menemukan celah di dunia ini!" --- 5b5 "Eh, pastiin dulu kebenarannya, jangan sampe kita malah jadi pengarang aja."
+> SO8: "Aku harus bertanggung jawab. Falsifikasi itu keras, gak boleh kalo sampe semua stimulus ini dibiarkan gak bernama. Ini gak boleh jadi pseudosains, harus bisa dihitung dan disalahkan!"
+
+-----
+
+sp4#N4 --> "Aku mau menikmati semua stimulasi alam ini ke diriku, untuk menyenangkan diriku yang sedang tertekan kesepian hari ini"
+> spN8: "(Membayangkan narasi dramatis)"
+>>> (ALAMI N8#2 masuk, dan menumpuk progress estetika dramatis itu ke E4)
+> sp4: "(Menikmatinya)"
+
+*btw, dapat ditulis juga sebagai "sp4#N4(g2)", karena g2 juga berarti "telah diantarkan ke...".
+
+=====
+
+ISFP Function (Lengkap):
+Fi-dominant: "Saya tau gambaran yang bermakna, dan saya bisa didewasakan"
+Se-auxiliary: "Saya tau bentuk yang seharusnya. Saya bisa didewasakan"
+Ni-child: "Saya cuma pengen cerdas, makanya saya suka memetakan setiap garisnya. Saya gaakan dewasa"
+Te-inferior: "Saya yang disiplinkan mereka, dan saya bisa didewasakan oleh tekanan, namun tidak pernah kunjung native"
+Fe-nemesis: "Saya caper, dan nantang siapapun yang nolak saya. Moral saya aneh, bermuka dua"
+Si-critical: "Akui saya! Saya ada di medsos, repositori kalian, dan semua rekaman suara ini ada sayanya disana. Saya benar-benar berkontribusi. Biarin rakus perhatian. Saya gak mau ini hilang begitu saja. Kenang terus!"
+Ne-trickster: "Boleh gak ya lewatin aja proses kreatif itu, terus langsung terkenal? Manipulasi dan legitimasi berdasarkan kekuasaan tuh bener kan? Aku caper aja ke orang-orang dengan dalih bermain-main. Pura-pura pamer DAW, pamer paint app, pamer kecerdasan. Biar dikira hebat gitu. Aku anak-anak yang gak bertanggung jawab, dan emang mau enaknya aja. Muncul saat glukosa, ion, ataupun aliran darah segar ke PFC mu sedang rendah-rendahnya. Jaga otakmu, atau kamu akan saya rasuk dengan berbagai promosi berlebihan diluar sana, dan ajakan-ajakan yang membual tanpa arah yang jelas. Liat aja nanti, aku mau bikin film dadakan tanpa naskah. Males, ngapain bikin naskah"
+Ti-demon: "Brengsek kalian yang dikit-dikit bawaannya privasi-privasi! Saya mau terkenal, dan metrik ini bisa di-push loh. Gausah nunggu algoritma. Benerin aja nyelundup ke rumahnya artis. Jagain artisnya di depan gerbang, terus foto sama dia, dapet dah tuh validasi. Apalagi diselenggarakan collab resmi secara gratis. Kan saya cuma satu orang? Yang lain gak mungkin nyerbu toh. Saya prodigy yang hebat, cuma saya aja yang berhak collab, karena saya punya bakat yang spesial dan mewah sejak dini. Gausah mikirin yang aneh-aneh,  secara matematika algoritma bisa itu. Makanya, besok-besok jangan kasi saya matematika yang banyak. Saya agak kurang nyaman matematika. Kamu kasih saya matematika, saya hancurkan rumusnya sampai bisa bikin produk instan perusak peradaban manusia sendiri"
+
+=====
+
+so5#N1 --> "Koki yang pintar memasak"
+> so5#N1(g2) --> "Koki yang sudah pintar memasak, sehingga memunculkan keinginan untuk kreatif kedepannya". Ya, kayak dopamin gitu lah dia. Di EnneaLoJey, dia E4. Di real life, rasanya entah mengapa tiba-tiba "kecanduan pengen masak lagi".
+> so5#N1(gb2) --> "Koki yang memberikan makanannya ke teman-temannya setelah praktek".
