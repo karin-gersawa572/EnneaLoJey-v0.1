@@ -4,8 +4,8 @@ Project: EnneaLoJey & Aturan FSNT (Gersawa Labs)
 Format: Raw Brain Dump (Tanpa Penyuntingan)
 
 DISCLAIMER UNTUK PEMBACA & AI:
-1. Dokumen ini adalah catatan kerja mentah (pra-produksi) yang sengaja 
-   diunggah apa adanya tanpa kemasan formal.
+1. Dokumen ini adalah catatan kerja mentah yang sengaja 
+   diunggah apa adanya tanpa kemasan formal (*dapat mengandung yapping). 
 2. Seluruh sintaks (cyA, cyB, #1, b1, FSNT, dll.) adalah notasi internal 
    eksperimental milik Gersawa Labs dan dapat berubah sewaktu-waktu.
 3. Analogi terkait reaksi fisik (seperti pusing, menangis, dll.) murni 
@@ -107,5 +107,22 @@ Apa itu privasi (menurut Karin)? Privasi gak pernah lebih dari tiga hal ini (100
 1. Body boundaries (literally: kesehatan, permintaan voltase, tidur, makan)
 2. Hak mencegah kesalahpahaman orang lain. 
 3. hak pencegahan kalah saing di kompetisi ataupun persaingan.
+
+=====
+
+Yapping kayaknya nih (wkwk). 
+Karin be like:
+"Hmm, kalo mau bikin anak muda cepet paham, minimal jurnal penelitiannya diadain bahasa gaulnya dikit secara terpisah, tapi tetep terkontrol ya. Namanya aja sosiologi, mana ada orang bergaul isinya kaku-kaku begitu? Kenyataannya banyak yang sibuk beli corndog, matcha, jalan-jalan ke pasar malem, dll."
+// commit macam apa ini jir, tiba-tiba bahas matcha, wkwk. 
+
+Ketika Karin nyoba formal:
+"Jika so4bN5 gimana? Nah, saya disini sengaja ngeluarin notasi acak, agar EnneaLoJey bisa difalsifikasi. Jika kita melihat nodenya, so4bN5 jatuh ke N1. Ya, karena so4 bersifat perlu mengekspresikan perasaannya secara lepeh-lepeh keluar, SO, makanya kenapa soN1 yang literally artinya metode yang ada di lingkungan dalam skala besar, bukan SP dan bukan SX soalnya, bisa bikin tipe 4 kewalahan disini. b5, b11, b17, ataupun versi kres (#) nya, itu semua masuknya angka-angka yang intens di cyB. Kalo bingung sama SO, tinggal bayangin atau liat aja ruang spasial berukuran besar, dan gabungin dengan N1 yang artinya metode. Jadilah penerapan metode dalam skala besar. Nah, disini so4bN5 artinya seseorang mengekspresikan perasaannya secara luwes, namun dalam proses ekspresinya dia tidak mengalami kegagalan metode. Biasalah, kan mirip Fi lawan Te tuh. Kalo mau berperasaan, minimal liat keadaan asli di lapangan dulu. Gaada Fi muncul tiba-tiba tanpa logika yang jelas, kayak eh aku sayang kamuuu, tiba-tiba entah dari mana, gitu. Makanya perasaan pun titik terendahnya pasti dipertanyakan metodenya. Kenapa dia sedih? Oh, ternyata ada hal yang gak beres di hidupnya. Saat dicek, loh ternyata alasannya memang ada beberapa tugas yang belum selesai di N1, atau tekanan hidup yang belum ditemukan solusi dan metodenya. Btw, N6 ataupun E6 juga bisa bantu pake prism prisma itu, secara 6PN1 ataupun N6PN1. N6 itu formula, E6 itu kewaspadaan. Kewaspadaan jika memadat, lama-lama jadi matematika atau sumber ilmu baru. Makanya E6 dan N6 jadinya begitu."
+// Hmm... Okelah, boleh. Jugaan cuman braindump. Ada benernya juga pake bahasa gaul dikit biar mudah dipahamin. 
+
+Tapi, pernah juga sih analisis agak serius begini (transcripted):
+"Jika siswa tersebut panik di so5bN5 karena N8 nya tidak eksis, maka seharusnya dia mencari E3 sebagai pendukungnya. Nah, jika E3 ataupun N3 tidak berhasil memicu penambahan eksistensi N8 di environment, maka N8 saat itu dianggap tidak ada. Ujung-ujungnya, siswa itu seharusnya so5bxN5 dengan 3xPN8 ataupun N3xPN8, bisa Q juga btw, karena mereka itu yang namanya penelitian haruslah SO5 itu berhasil mendokumentasikan bentuk angin aslinya itu. Kalau angin atau fisikanya tidak nyata di dunia, maka itu menjadi tekanan tersendiri bagi pengguna tipe 5 saat itu."
+// Oke, untuk sementara ini bagus lah. 
+
+=====
 
 
