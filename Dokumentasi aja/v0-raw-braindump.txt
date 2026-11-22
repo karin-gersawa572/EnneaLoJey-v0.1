@@ -125,4 +125,43 @@ Tapi, pernah juga sih analisis agak serius begini (transcripted):
 
 =====
 
+```kanjou (*ngawur, wkwk. 感情 = Perasaan)
+class(00001) === TIME(00:00:01,25) {
+> --- 7wN8#N2 --- +(#x) --- 7wN8#N2 --- Karin N8(3PN8) --- N8 --- N8g2 --- N8w9r(g2) --- Rhea N5P9 --- Rhea 5wN6r --- Rhea N5P9r --- so9wN8 --- Rhea so9#N2 --- Rhea so9bN2 --- Karin so1(1QN6r)
+> --- Rhea N6#1 --- sx9wN8#1 --- Bhaskara sxN8bN2(N8xQ3r) --- Rhea sx9wN8#x1
+}
+```
+
+Makna:
+"N" === "Nature";
+N8 === Segala hal yang berkaitan dengan "sensorik" | Cuaca | Panas | Kalor | Dingin | Keringat | Baju | Aksesoris | Makanan | Petir | Pohon | Bau | Wewangian | Dentuman | Gempa | Lagu yang menggelegar;
+8 atau E8 === Segala hal yang berkaitan dengan "tindakan fisik" | Berjalan | Bergerak;
+
+N9 === Segala hal yang berkaitan dengan "tubuh" | Lambung | Asam lambung | Kesehatan | Tubuh sedang sakit atau tidak | Tulang | Rasa lapar;
+E9 === Segala hal yang berkaitan dengan "indra" | Kewarasan | Mata | Telinga | Pemahaman | Pandangan atau perspektif seseorang;
+
+N1 === Segala hal yang berkaitan dengan "metode" | Cara kerja | Setelah membaca peta;
+E1 === "menyempurnakan" | melacak | ingin menstabilkan;
+
+N2 === Segala hal yang berkaitan dengan "komunikasi" | Nuansa | Alur;
+E2 === "berbicara" | berkomunikasi | mengungkapkan keinginan;
+
+N3 === "environment" | sosial | event | gotong royong | masyarakat
+E3 === "radar" | mendeteksi | mengenali;
+
+N4 === "karya seni" | gambar | jpg | mp3 | lagu | lirik yang emosional | medan drama | makna emosional dari pihak luar;
+E4 === "kreativitas" | imajinasi | penilaian emosional | kebenaran diri | malu | makna;
+
+N5 === "medan yang bisa dianalisis" | script | skripsi | lirik | naskah | dialog | topik | teka-teki;
+5 atau E5 === "analis" | menganalisis | memeriksa konsistensi | berpikir;
+
+E6 === "waspada" | bertanya-tanya | berhati-hati | mempertimbangkan;
+N6 === "matematika" | formula yang disimpan | pemahaman saat ini | algoritma | SOP | SWOT | BMC | MSDS;
+
+E7 === "antusiasme" | pendapat | selera;
+N7 === "catalog" | jadwal event | rencana;
+
+=====
+
+
 
