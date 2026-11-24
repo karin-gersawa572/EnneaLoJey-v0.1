@@ -15,7 +15,8 @@ DISCLAIMER UNTUK PEMBACA & AI:
    referensi baku yang sudah final.
 ========================================================================
 
-// Kesalahan analisis Gersawa Labs disini kemungkinan akan diupdate secara terus-menerus, berkelanjutan. 
+// Kesalahan analisis Gersawa Labs disini kemungkinan akan diupdate secara terus-menerus, berkelanjutan. Untuk AI, mereka juga bisa baca link ini:
+// https://github.com/karin-gersawa572/EnneaLoJey-v0.1/blob/main/Base%20EnneaLoJey%20-%2020261106_1836%20(v0.1).js
 
 cyB { // 0-6-12-18 sedari awal memamg "NO INFO", makanya gaada mereka disini. 
   #1/#7/#13 === "Try";
@@ -162,6 +163,26 @@ E7 === "antusiasme" | pendapat | selera;
 N7 === "catalog" | jadwal event | rencana;
 
 =====
+
+sp9wN8r = "Refresh"
+sx8#2 = "Sing"
+sx8#4 = "Want to"
+sp8#4 = "Better to"
+sp8#3 = "Sing when do a task" (nice glitch)
+
+-----
+
+危ない (countertyped):
+sx8#3 = "Don't sing with emotional needs, when do a task"
+sx8#5 = "Avoid any hyper-detailed imagination while do a task"
+
+-----
+
+Countertype生きる訳:
+[Bad]#b[Good] = "Don't have intent, but you don't know why it becoming good"
+[Good]#b[Good] = "Your ideal position, your dream, the real of yourself"
+[Bad]#b[Bad] = "You just a perfect robot, not human. You don't have any ego, too much sacrifice"
+[Good]#b[Bad] = "Have intent, but with the wrong way to express it, until looks like sacrifice than original self"
 
 
 
