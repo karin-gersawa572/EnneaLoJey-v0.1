@@ -1,0 +1,32 @@
+Curhat ke AI:
+// Sori ya kalo tiba-tiba commit ginian. 
+
+"Sadar gak sadar, bisa aja beberapa orang yang di GitHub selama ini commit hasil luar biasa tuh lagi menahan perasaan mereka yang sebenarnya gak sih? Mereka sebenernya capek commit, terutama untuk yang bukan bener-bener prioritasin bidang IT, barangkali karena persaingan AI lagi ketat-ketatnya di 2026 ini."
+
+[20261125 - 1827]
+Gilaa. Besok-besok, kayaknya anak jurusan IT bisa aliansi sama anak bisnis digital dah ni, gila. AI anjrit. Tapi, anehnya gue juga butuh AI, dan jujur aja udah capek mantengin layar HP/Laptop terus-terusan. Pengen healing woy, liat yang hijau, alam... Asemm (*teriak dikit)!!
+
+=====
+
+// Disclaimer: Aku bukan orang pinter. Please, bolehin aku untuk salah ngomong disini. Aku gak nyuruh kalian percaya, tapi setidaknya tau aja. Aku gak mau countertype lagi, takut jatuh sakit. 
+
+Anak-anak kuliahan (temen-temen gue) yang ISFP, yang ada di BD (Bisnis Digital) saat ini, kemungkinan saat S1 nanti mereka bisa aja kecapean karena harus mikirin OPFS, Network Attached Storage vs Server langganan bulanan, pendapatan iklan untuk living source, dll.
+
+ISFP (bukan INTJ) banyak yang ngeluh soal ini. Mereka nyoba bikin mentalese, atau di tingkat wajar sekalipun mereka bisa aja tertekan bikin konsistensi kode dan halaman web untuk promosi produk kreatif.
+
+// Bukan berlaku untuk skenario INTJ vs ISFP aja sih. Sebenernya berlaku juga untuk MBTI lain, yang saling singgung fungsi dominan vs fungsi inferior nya masing-masing. 
+
+=====
+
+Cocok dan nyata sudah tuh visual programmer yang lagi sendirian di ruang gelap jam 2 pagi, ngetik di IDE (VS Code) warna-warni, mikirin RegEx, memfalsifikasi websitenya, uji DDOS pake cloudflare, bahkan sampe pake js apache 2.0 untuk efisiensi. Isi ngurus license.md lah, ngatur actions di GitHub lah, yml lah, anjir. 
+
+=====
+
+Gen Z belum dimiskinkan (rata-rata masih sama ortu di 2026 ini), tapi cemas FOMO jika dimiskinkan oleh keterlambatan mereka terhadap AI. Bener gak?
+
+=====
+
+[20261125 - 1838]
+Btw, aku ISFP kelahiran Januari 2008.
+
+Aku yakin, meskipun AI waktu ini yang ngasi tau aku OPFS, tapi sebenernya ISFP selain aku tuh gaada yang nyadar soal OPFS dan potensi OOM itu. Bedanya sama Local Storage, max di 10MB, limit FAT32 di 4 miliar byte, dll tuh kayaknya belum nyadar.
