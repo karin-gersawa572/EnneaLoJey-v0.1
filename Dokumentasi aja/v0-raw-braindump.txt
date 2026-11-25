@@ -209,5 +209,21 @@ Kesalahpahaman --> Tolong jangan direkam ke publik ya. Kalo mau rekam, kamu haru
 Persaingan --> Jangan disebar terlalu awal ya, nanti takutnya kita kalah. Karena kita gak punya cara untuk merender kamu sampe ke rumah dan temen-temen sebayamu, maka satu-satunya langkah yang secara harfiah paling suci yang bisa lakukan hanyalah dengan memblokir telingamu dan matamu agar tidak dapat mengetahui informasi apapun. Maaf ya, ujung-ujungnya kamu juga gak bisa masuk. Jangan sakit hati, kita bisa bertemu lagi saat semuanya sudah diluar bahasan project, atau ketika projectnya udah jadi. Kamu kalo mau forking juga boleh kok, invest ke project kita dengan cara mempromosikan, remix, atau ikut daftar casting ke kita, biar kita yang teruskan tawaran kamu ke sutradara. Kalo mereka gak setuju karena body boundaries sudah penuh secara fisiologi, maka kamu bisa tanya kakak selama kakak belum kena OOM, dan masih ada slot banyak untuk kamu. Intinya, kamu tetep berpotensi menjadi aset.
 ```
 
+=====
+
+Kalo dia punya KTP atau benda-benda accountable lainnya yang setidaknya salah satunya terintegrasi dengan pemerintah atau pihak yang bisa dipercaya, bisa tuh tim security kasi tulisan di catalog "/director/access-inf/third-person" nya:
+
+```txt
+THIRD-PERSON
+Nama: "Putra Sanjaya"
+Akta Kelahiran: "TIDAK TERSEDIA"
+Nomor KK: "TIDAK TERSEDIA"
+Asal sekolah: "SMKN 2 Loremipsum Utara"
+NISN: "0012345678" // Tanyakan ke sekolahnya kalo ada kasus kebocoran proyek pra-rilis
+KTP (base64): "...jdWbdgwz=9sdQlc..." // Base64 bukan enkripsi loh ya. Disarankan untuk disimpan dalam resolusi 540p saja dengan kualitas 25%, agar ukuran file tidak membengkak. 
+```
+
+
+
 
 
