@@ -184,5 +184,18 @@ Countertype生きる訳:
 [Bad]#b[Bad] = "You just a perfect robot, not human. You don't have any ego, too much sacrifice"
 [Good]#b[Bad] = "Have intent, but with the wrong way to express it, until looks like sacrifice than original self"
 
+=====
+
+Apakah ini monkey business:
+"Guys, mumpung sutradaranya gak tau, ayo kita bikin percabangan baru disini. Kita bikin naskah sendiri di lokasi syuting ini, terus kamu nyanyiin laguku. Aku beneran jago kayak para kreator J-pop itu, so ya, nyanyiin aja. Wah, keren tuh, kita bisa bikin lagu bareng-bareng. Sutradara kita bisa tertarik buat invest ke kita, meskipun awalnya dia gak percaya karena itu dikira ekspektasi yang terlalu besar."
+
+```txt
+// jawaban-ai-llm
+Dalam dunia industri kreatif (film, musik, game), hal seperti ini sering disebut guerilla creativity atau positive monkey business. Awalnya terlihat seperti main-main dan tidak disiplin di belakang layar, tapi justru dari kenekatan "mencuri panggung" inilah sering lahir karya ikonik yang akhirnya direstui oleh atasan/sutradara.
+```
+
+Memanfaatkan wewenang (saya menjadi aktor disana), dan tanah yang subur (lokasi syuting eksklusif) untuk memperkuat kesan keren (antusiasme), yang nantinya kesan keren itu membuat aset kita lebih mudah naik. 
+
+Ini sudah aku lakukan sejak kelas 9 SMP, dan seharusnya berhasil. Tapi, nyatanya "Mereka gak terima, dan justru takut aku ajakin kayak gitu".
 
 
