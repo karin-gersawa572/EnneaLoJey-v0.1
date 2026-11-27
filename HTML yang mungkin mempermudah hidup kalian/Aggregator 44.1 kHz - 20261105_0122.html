@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karin Audio Converter & Compressor</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .drag-active {
+            border-color: #3b82f6 !important;
+            background-color: rgba(59, 130, 246, 0.05) !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-teal-500 text-slate-900 p-2 rounded-xl font-bold">
+                    <i data-lucide="music-2" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Karin MP3 Converter</h1>
+                    <p class="text-xs text-slate-400">MP3 320 kbps / 44.1 kHz Resampler</p>
+                </div>
+            </div>
+            <div class="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-full border border-slate-700 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Browser Local Engine (Client-side)
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl mx-auto px-4 py-8 flex-1 w-full flex flex-col gap-6">
+
+        <!-- Informational Banner -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+                <div class="p-2 bg-amber-500/10 text-amber-400 rounded-lg shrink-0 mt-0.5 sm:mt-0">
+                    <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm font-semibold text-slate-200">Standar Audio MP3 Karin</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Semua file MP3 akan diproses ulang tepat ke **320 kbps CBR** dengan **Sample Rate 44.1 kHz Stereo**.</p>
+                </div>
+            </div>
+            <a href="LINK DIHAPUS" target="_blank" class="text-xs text-teal-400 hover:underline flex items-center gap-1 shrink-0">
+                Panduan Official <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            </a>
+        </div>
+
+        <!-- File Upload Area -->
+        <div id="drop-zone" class="border-2 border-dashed border-slate-700 bg-slate-800/30 hover:bg-slate-800/60 rounded-3xl p-8 sm:p-12 text-center transition-all cursor-pointer relative group">
+            <input type="file" id="file-input" accept="audio/mp3,.mp3,audio/*" class="hidden" multiple>
+            
+            <div class="w-16 h-16 bg-slate-800 group-hover:bg-slate-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-teal-400 transition-colors shadow-lg">
+                <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+            </div>
+            
+            <h3 class="text-lg font-semibold text-slate-200 mb-1">Pilih atau Drag & Drop File MP3</h3>
+            <p class="text-xs text-slate-400 mb-4">Otomatis memproses ulang MP3 Anda ke 44.1 kHz (Bitrate dikunci di 320 kbps)</p>
+            
+            <button type="button" onclick="document.getElementById('file-input').click()" class="bg-teal-500 hover:bg-teal-400 text-slate-950 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors inline-flex items-center gap-2">
+                <i data-lucide="file-audio" class="w-4 h-4"></i> Pilih File MP3
+            </button>
+        </div>
+
+        <!-- Conversion Settings Options (Locked to 320kbps & 44.1kHz) -->
+        <div class="bg-slate-800/40 border border-slate-800 rounded-2xl p-5">
+            <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                <i data-lucide="lock" class="w-4 h-4 text-teal-400"></i> Spesifikasi Terkunci (Aggregator Standard)
+            </h3>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1.5 font-medium">Format Output</label>
+                    <input type="text" value="MP3 (.mp3)" class="w-full bg-slate-900 border border-slate-700/60 rounded-xl px-3 py-2 text-slate-300 font-semibold cursor-not-allowed" disabled>
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1.5 font-medium">Bitrate MP3</label>
+                    <input type="text" value="320 kbps (Fixed CBR)" class="w-full bg-slate-900 border border-slate-700/60 rounded-xl px-3 py-2 text-teal-400 font-semibold cursor-not-allowed" disabled>
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1.5 font-medium">Sample Rate</label>
+                    <input type="text" value="44.1 kHz (44100 Hz)" class="w-full bg-slate-900 border border-slate-700/60 rounded-xl px-3 py-2 text-teal-400 font-semibold cursor-not-allowed" disabled>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task List / Queue -->
+        <div id="queue-container" class="space-y-3 hidden">
+            <div class="flex items-center justify-between px-1">
+                <h3 class="text-sm font-semibold text-slate-300">Daftar Berkas Audio</h3>
+                <button id="clear-btn" onclick="clearQueue()" class="text-xs text-slate-400 hover:text-rose-400 flex items-center gap-1 transition-colors">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus Semua
+                </button>
+            </div>
+            
+            <div id="queue-list" class="space-y-3">
+                <!-- Queue Items standard insert here via JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+        <p>Proses konversi 100% aman dan berjalan di browser Anda tanpa mengunggah file ke server manapun.</p>
+    </footer>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 border border-slate-700 text-slate-200 px-4 py-3 rounded-xl shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-2 text-xs z-50">
+        <i id="toast-icon" data-lucide="info" class="w-4 h-4 text-teal-400"></i>
+        <span id="toast-msg">Notifikasi</span>
+    </div>
+
+    <!-- Include lamejs for MP3 encoding directly in the browser -->
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const queueContainer = document.getElementById('queue-container');
+        const queueList = document.getElementById('queue-list');
+        let fileQueue = [];
+
+        // Drag & Drop Handlers
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-active');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-active');
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            if (!files.length) return;
+            queueContainer.classList.remove('hidden');
+            
+            Array.from(files).forEach(file => {
+                const itemId = 'item-' + Math.random().toString(36).substr(2, 9);
+                const itemData = {
+                    id: itemId,
+                    file: file,
+                    status: 'pending',
+                    resultUrl: null,
+                    resultName: null
+                };
+                fileQueue.push(itemData);
+                renderItem(itemData);
+                processAudioFile(itemData);
+            });
+
+            fileInput.value = '';
+        }
+
+        function renderItem(item) {
+            const sizeMB = (item.file.size / (1024 * 1024)).toFixed(2);
+            const html = `
+                <div id="${item.id}" class="bg-slate-800/80 border border-slate-700/70 rounded-2xl p-4 transition-all">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex items-center space-x-3 overflow-hidden">
+                            <div class="p-2.5 bg-slate-700/50 rounded-xl text-teal-400 shrink-0">
+                                <i data-lucide="music" class="w-5 h-5"></i>
+                            </div>
+                            <div class="truncate">
+                                <p class="text-sm font-medium text-slate-200 truncate">${item.file.name}</p>
+                                <p class="text-xs text-slate-400">${sizeMB} MB • Target: MP3 320kbps / 44.1 kHz</p>
+                            </div>
+                        </div>
+                        
+                        <div id="status-container-${item.id}" class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                            <span class="text-xs text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5">
+                                <i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Menunggu...
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div id="progress-bar-bg-${item.id}" class="w-full bg-slate-700/50 h-1.5 rounded-full mt-3 overflow-hidden">
+                        <div id="progress-bar-${item.id}" class="bg-teal-400 h-full w-0 transition-all duration-200"></div>
+                    </div>
+                </div>
+            `;
+            queueList.insertAdjacentHTML('beforeend', html);
+            lucide.createIcons();
+        }
+
+        async function processAudioFile(item) {
+            const statusContainer = document.getElementById(`status-container-${item.id}`);
+            const progressBar = document.getElementById(`progress-bar-${item.id}`);
+
+            try {
+                // Update UI: Reading File
+                statusContainer.innerHTML = `
+                    <span class="text-xs text-teal-400 bg-teal-400/10 px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5">
+                        <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Membaca MP3...
+                    </span>
+                `;
+                lucide.createIcons();
+                progressBar.style.width = '20%';
+
+                const arrayBuffer = await item.file.arrayBuffer();
+                
+                // Target Specifications
+                const targetSampleRate = 44100;
+                const targetBitrate = 320; // Exactly 320 kbps
+
+                // Decode Audio Data using AudioContext
+                const tempAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const decodedBuffer = await tempAudioCtx.decodeAudioData(arrayBuffer);
+                tempAudioCtx.close();
+
+                progressBar.style.width = '40%';
+                
+                // Resample to 44.1 kHz using OfflineAudioContext
+                statusContainer.innerHTML = `
+                    <span class="text-xs text-teal-400 bg-teal-400/10 px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 animate-spin"></i> Resample ke 44.1 kHz...
+                    </span>
+                `;
+                lucide.createIcons();
+
+                const channels = Math.min(decodedBuffer.numberOfChannels, 2); // Max stereo (2 channels)
+                const offlineCtx = new OfflineAudioContext(
+                    channels,
+                    decodedBuffer.duration * targetSampleRate,
+                    targetSampleRate
+                );
+
+                const bufferSource = offlineCtx.createBufferSource();
+                bufferSource.buffer = decodedBuffer;
+                bufferSource.connect(offlineCtx.destination);
+                bufferSource.start();
+
+                const resampledBuffer = await offlineCtx.startRendering();
+                progressBar.style.width = '60%';
+
+                // Encode to MP3 320kbps using LameJS
+                statusContainer.innerHTML = `
+                    <span class="text-xs text-teal-400 bg-teal-400/10 px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5">
+                        <i data-lucide="cpu" class="w-3.5 h-3.5 animate-spin"></i> Encoding MP3 320kbps...
+                    </span>
+                `;
+                lucide.createIcons();
+
+                // Small delay to allow DOM update
+                await new Promise(resolve => setTimeout(resolve, 50));
+
+                const mp3Blob = await encodeMp3(resampledBuffer, targetBitrate, (percent) => {
+                    progressBar.style.width = `${60 + Math.floor(percent * 0.35)}%`;
+                });
+
+                progressBar.style.width = '100%';
+
+                // Generate Download Link
+                const downloadUrl = URL.createObjectURL(mp3Blob);
+                const originalName = item.file.name.substring(0, item.file.name.lastIndexOf('.')) || item.file.name;
+                const exportName = `${originalName}_320kbps_44.1kHz.mp3`;
+
+                item.resultUrl = downloadUrl;
+                item.resultName = exportName;
+                item.status = 'done';
+
+                // Success UI Update
+                statusContainer.innerHTML = `
+                    <a href="${downloadUrl}" download="${exportName}" class="bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold px-3 py-1.5 rounded-xl text-xs transition-colors flex items-center gap-1.5 shadow-md">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Unduh MP3 (320k 44.1kHz)
+                    </a>
+                `;
+                lucide.createIcons();
+                showToast(`Selesai diproses: ${exportName}`, 'success');
+
+            } catch (err) {
+                console.error(err);
+                item.status = 'error';
+                progressBar.style.backgroundColor = '#ef4444';
+                statusContainer.innerHTML = `
+                    <span class="text-xs text-rose-400 bg-rose-400/10 px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5">
+                        <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Gagal Memproses
+                    </span>
+                `;
+                lucide.createIcons();
+                showToast(`Gagal mengonversi file ${item.file.name}`, 'error');
+            }
+        }
+
+        // Encode Float32 AudioBuffer to MP3 320kbps 44.1kHz using LameJS
+        function encodeMp3(audioBuffer, bitrate, progressCallback) {
+            return new Promise((resolve) => {
+                const channels = audioBuffer.numberOfChannels;
+                const sampleRate = audioBuffer.sampleRate; // 44100
+                const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, bitrate);
+                
+                const mp3Data = [];
+                const samplesL = audioBuffer.getChannelData(0);
+                const samplesR = channels > 1 ? audioBuffer.getChannelData(1) : samplesL;
+
+                // Convert Float32Array [-1, 1] to Int16Array [-32768, 32767]
+                const sampleLength = samplesL.length;
+                const leftInt16 = new Int16Array(sampleLength);
+                const rightInt16 = new Int16Array(sampleLength);
+
+                for (let i = 0; i < sampleLength; i++) {
+                    let sL = Math.max(-1, Math.min(1, samplesL[i]));
+                    leftInt16[i] = sL < 0 ? sL * 0x8000 : sL * 0x7FFF;
+
+                    let sR = Math.max(-1, Math.min(1, samplesR[i]));
+                    rightInt16[i] = sR < 0 ? sR * 0x8000 : sR * 0x7FFF;
+                }
+
+                // Process in chunks of 1152 samples (LAME block size)
+                const chunkSize = 1152;
+                let offset = 0;
+
+                function processChunk() {
+                    const end = Math.min(offset + chunkSize, sampleLength);
+                    const subL = leftInt16.subarray(offset, end);
+                    const subR = rightInt16.subarray(offset, end);
+
+                    let mp3buf;
+                    if (channels === 2) {
+                        mp3buf = mp3encoder.encodeBuffer(subL, subR);
+                    } else {
+                        mp3buf = mp3encoder.encodeBuffer(subL);
+                    }
+
+                    if (mp3buf.length > 0) {
+                        mp3Data.push(mp3buf);
+                    }
+
+                    offset += chunkSize;
+
+                    if (progressCallback) {
+                        progressCallback(offset / sampleLength);
+                    }
+
+                    if (offset < sampleLength) {
+                        // Use setTimeout to keep UI responsive
+                        setTimeout(processChunk, 0);
+                    } else {
+                        // Flush remaining buffers
+                        const mp3bufLast = mp3encoder.flush();
+                        if (mp3bufLast.length > 0) {
+                            mp3Data.push(mp3bufLast);
+                        }
+                        const blob = new Blob(mp3Data, { type: 'audio/mp3' });
+                        resolve(blob);
+                    }
+                }
+
+                processChunk();
+            });
+        }
+
+        function clearQueue() {
+            fileQueue = [];
+            queueList.innerHTML = '';
+            queueContainer.classList.add('hidden');
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = message;
+            
+            if (type === 'error') {
+                toastIcon.setAttribute('data-lucide', 'alert-circle');
+                toastIcon.className = 'w-4 h-4 text-rose-400';
+            } else {
+                toastIcon.setAttribute('data-lucide', 'check-circle');
+                toastIcon.className = 'w-4 h-4 text-teal-400';
+            }
+            lucide.createIcons();
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

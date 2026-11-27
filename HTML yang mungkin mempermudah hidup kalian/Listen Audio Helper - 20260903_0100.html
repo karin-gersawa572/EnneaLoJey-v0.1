@@ -1,0 +1,231 @@
+
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Speed Player - Mendengarkan Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+        input[type=range] {
+            accent-color: #38daf0;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-3 flex flex-col max-w-xl mx-auto select-none">
+
+    <!-- Header -->
+    <header class="border-b border-gray-800 pb-2 mb-3 flex items-center justify-between">
+        <div>
+            <h1 class="text-xs font-bold text-gray-200 uppercase tracking-wide">聴速 (Audio Speed Player)</h1>
+            <p class="text-[9px] text-cyan-400 font-mono">Real-time Playback • Pitch Control • Listen Only</p>
+        </div>
+
+        <div>
+            <label for="audioFileInput" class="bg-blue-950 hover:bg-blue-900 text-blue-300 text-xs px-2.5 py-1.5 rounded cursor-pointer font-bold border border-blue-800 flex items-center gap-1">
+                <span>音</span>
+                <span class="text-[10px]">Pilih Audio</span>
+            </label>
+            <input type="file" id="audioFileInput" accept="audio/*" multiple class="hidden" onchange="handleAudioSelect(event)">
+        </div>
+    </header>
+
+    <!-- Control Panel Kecepatan & Pitch -->
+    <section class="bg-gray-900 border border-gray-800 rounded p-3 mb-3 space-y-3">
+        <div class="text-xs font-bold text-gray-400 border-b border-gray-800 pb-1 flex justify-between items-center">
+            <span>設定 Pengaturan Pemutaran</span>
+            
+            <!-- Toggle Switch Preserves Pitch -->
+            <label class="flex items-center gap-1.5 cursor-pointer text-amber-400 bg-black/50 border border-amber-800/60 px-2 py-0.5 rounded hover:border-amber-500 transition" title="Jika dimatikan: Nada/Pitch berubah (Diperlambat = Suara Berat, Dipercepat = Chipmunk)">
+                <input type="checkbox" id="preservesPitchCheckbox" onchange="togglePreservesPitch(this.checked)" class="w-3.5 h-3.5 rounded accent-amber-400 cursor-pointer">
+                <span class="text-[10px] font-bold tracking-wider uppercase">Pertahankan Pitch</span>
+            </label>
+        </div>
+
+        <!-- Speed Controls -->
+        <div>
+            <div class="flex justify-between items-center text-xs mb-1">
+                <span class="text-gray-400">Kecepatan Pemutaran:</span>
+                <span id="speedValText" class="font-mono text-cyan-400 font-bold">1.0000x (100%)</span>
+            </div>
+            
+            <!-- Quick Preset Buttons -->
+            <div class="grid grid-cols-6 gap-1 mb-2">
+                <button onclick="setSpeed(0.0625)" class="bg-gray-800 hover:bg-gray-700 text-[10px] py-1 rounded font-mono text-gray-300">0.0625x</button>
+                <button onclick="setSpeed(0.125)" class="bg-gray-800 hover:bg-gray-700 text-[10px] py-1 rounded font-mono text-gray-300">0.125x</button>
+                <button onclick="setSpeed(0.25)" class="bg-gray-800 hover:bg-gray-700 text-[10px] py-1 rounded font-mono text-gray-300">0.25x</button>
+                <button onclick="setSpeed(0.5)" class="bg-gray-800 hover:bg-gray-700 text-[10px] py-1 rounded font-mono text-gray-300">0.5x</button>
+                <button onclick="setSpeed(1.0)" class="bg-gray-800 hover:bg-gray-700 text-[10px] py-1 rounded font-mono text-gray-300">1.0x</button>
+                <button onclick="setSpeed(2.0)" class="bg-gray-800 hover:bg-gray-700 text-[10px] py-1 rounded font-mono text-gray-300">2.0x</button>
+            </div>
+            <div class="grid grid-cols-4 gap-1 mb-2">
+                <button onclick="setSpeed(4.0)" class="bg-gray-800 hover:bg-gray-700 text-[10px] py-1 rounded font-mono text-gray-300">4.0x</button>
+                <button onclick="setSpeed(8.0)" class="bg-gray-800 hover:bg-gray-700 text-[10px] py-1 rounded font-mono text-gray-300">8.0x</button>
+                <button onclick="setSpeed(12.0)" class="bg-gray-800 hover:bg-gray-700 text-[10px] py-1 rounded font-mono text-gray-300">12.0x</button>
+                <button onclick="setSpeed(16.0)" class="bg-gray-800 hover:bg-gray-700 text-[10px] py-1 rounded font-mono text-gray-300">16.0x</button>
+            </div>
+
+            <!-- Slider & Text Input -->
+            <input type="range" id="speedSlider" min="0.01" max="16" step="0.0001" value="1" class="w-full h-1.5 bg-gray-800 rounded cursor-pointer mb-2" oninput="onSliderChange(this.value)">
+            <div class="flex gap-2 items-center">
+                <input type="text" id="speedTextInput" value="100%" class="w-full bg-black border border-gray-800 rounded p-1 text-xs font-mono text-cyan-300 text-center focus:outline-none" oninput="onTextInputChange(this.value)">
+                <button onclick="resetSpeed()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-3 py-1 rounded font-mono">Reset</button>
+            </div>
+        </div>
+
+        <div class="text-[10px] text-gray-500 bg-black/30 p-2 rounded border border-gray-800/50">
+            💡 <span class="text-amber-400 font-bold">Tips:</span> Untuk mendengarkan audio hasil percepatan (misal 800%) agar suaranya kembali normal/berat, atur kecepatan pemutaran ke <b class="text-cyan-300">0.125x (12.5%)</b> dan pastikan <b class="text-amber-300">"Pertahankan Pitch" tidak dicentang</b>.
+        </div>
+    </section>
+
+    <!-- Queue List -->
+    <main class="flex-1">
+        <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xs font-bold text-gray-400 uppercase">列 Daftar Pemutaran Audio</h2>
+            <button onclick="clearAllAudio()" class="text-[10px] text-red-400 hover:underline">消 Bersihkan</button>
+        </div>
+
+        <div id="audioQueueContainer" class="space-y-2">
+            <div id="emptyText" class="text-center py-8 text-xs text-gray-600 border border-dashed border-gray-800 rounded">
+                Belum ada file audio yang dimuat. Pilih file audio untuk mulai mendengarkan.
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let audioList = [];
+        let currentGlobalSpeed = 1.0;
+        let isPreservesPitch = false; // Default: Pitch mengikuti kecepatan (Chipmunk / Suara Berat)
+
+        function handleAudioSelect(e) {
+            const files = Array.from(e.target.files);
+            if (!files.length) return;
+
+            files.forEach(file => {
+                audioList.push({
+                    id: 'aud_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                    file: file,
+                    srcUrl: URL.createObjectURL(file)
+                });
+            });
+
+            e.target.value = '';
+            renderQueue();
+        }
+
+        function renderQueue() {
+            const container = document.getElementById('audioQueueContainer');
+            if (audioList.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-xs text-gray-600 border border-dashed border-gray-800 rounded">Belum ada file audio yang dimuat. Pilih file audio untuk mulai mendengarkan.</div>`;
+                return;
+            }
+
+            let html = '';
+            audioList.forEach(item => {
+                const sizeMB = (item.file.size / (1024 * 1024)).toFixed(2);
+                
+                html += `
+                <div class="bg-gray-900 border border-gray-800 rounded p-2 text-xs space-y-2" id="card-${item.id}">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="overflow-hidden flex-1">
+                            <div class="font-bold text-gray-200 truncate">${item.file.name}</div>
+                            <div class="text-[10px] text-gray-500 font-mono">Size: ${sizeMB} MB</div>
+                        </div>
+                        <button onclick="removeAudio('${item.id}')" class="text-gray-500 hover:text-red-400 text-xs px-1">消 Hapus</button>
+                    </div>
+
+                    <div class="bg-black/60 border border-gray-800/80 p-1 rounded flex flex-col gap-1">
+                        <audio id="audioEl-${item.id}" controls class="w-full h-8 text-xs" src="${item.srcUrl}" preload="metadata"></audio>
+                    </div>
+                </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // Terapkan kecepatan dan opsi pitch ke semua elemen audio yang baru dirender
+            audioList.forEach(item => {
+                applySpeedToAudioElement(item.id);
+            });
+        }
+
+        function applySpeedToAudioElement(id) {
+            const audioEl = document.getElementById(`audioEl-${id}`);
+            if (audioEl) {
+                audioEl.preservesPitch = isPreservesPitch;
+                audioEl.mozPreservesPitch = isPreservesPitch;
+                audioEl.webkitPreservesPitch = isPreservesPitch;
+                audioEl.playbackRate = currentGlobalSpeed;
+            }
+        }
+
+        function applySpeedToAll() {
+            audioList.forEach(item => {
+                applySpeedToAudioElement(item.id);
+            });
+        }
+
+        function togglePreservesPitch(checked) {
+            isPreservesPitch = checked;
+            applySpeedToAll();
+        }
+
+        /* ----------------------------------------------------
+           SETTINGS HANDLERS
+           ---------------------------------------------------- */
+        function setSpeed(val) {
+            currentGlobalSpeed = parseFloat(val);
+            updateSpeedUI();
+            applySpeedToAll();
+        }
+
+        function resetSpeed() {
+            setSpeed(1.0);
+        }
+
+        function onSliderChange(val) {
+            currentGlobalSpeed = parseFloat(val);
+            updateSpeedUI();
+            applySpeedToAll();
+        }
+
+        function onTextInputChange(val) {
+            const num = parseFloat(val.replace(/[^\d.]/g, ''));
+            if (!isNaN(num) && num > 0) {
+                currentGlobalSpeed = num / 100;
+                if (currentGlobalSpeed >= 0.01 && currentGlobalSpeed <= 16) {
+                    document.getElementById('speedSlider').value = currentGlobalSpeed;
+                }
+                document.getElementById('speedValText').innerText = `${currentGlobalSpeed.toFixed(4)}x (${Math.round(currentGlobalSpeed * 100)}%)`;
+                applySpeedToAll();
+            }
+        }
+
+        function updateSpeedUI() {
+            document.getElementById('speedSlider').value = currentGlobalSpeed;
+            document.getElementById('speedTextInput').value = (currentGlobalSpeed * 100) + '%';
+            document.getElementById('speedValText').innerText = `${currentGlobalSpeed.toFixed(4)}x (${Math.round(currentGlobalSpeed * 100)}%)`;
+        }
+
+        function removeAudio(id) {
+            const item = audioList.find(a => a.id === id);
+            if (item && item.srcUrl) URL.revokeObjectURL(item.srcUrl);
+            audioList = audioList.filter(a => a.id !== id);
+            renderQueue();
+        }
+
+        function clearAllAudio() {
+            audioList.forEach(item => {
+                if (item.srcUrl) URL.revokeObjectURL(item.srcUrl);
+            });
+            audioList = [];
+            renderQueue();
+        }
+    </script>
+</body>
+</html>

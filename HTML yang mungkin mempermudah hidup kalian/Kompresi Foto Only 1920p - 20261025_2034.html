@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kompresor Foto Hemat OPFS</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 20px 16px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .upload-area:active {
+            transform: scale(0.98);
+            border-color: var(--accent);
+        }
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 6px;
+        }
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            background-color: var(--accent);
+            color: #0f172a;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(56, 189, 248, 0.2);
+            text-align: center;
+            text-decoration: none;
+        }
+        .btn:active {
+            background-color: var(--accent-hover);
+        }
+        .btn-success {
+            background-color: var(--success);
+            color: #ffffff;
+            box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .stat-box {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 2px;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: var(--border);
+            border-radius: 8px;
+            height: 8px;
+            overflow: hidden;
+            margin: 10px 0;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: var(--accent);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        .log-box {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            padding: 8px 10px;
+            height: 60px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            font-family: monospace;
+            margin-bottom: 10px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #334155;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            transition: transform 0.3s ease;
+            z-index: 999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 90%;
+        }
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Kartu Utama Aksi -->
+        <div class="card" style="margin-top: 8px;">
+            <input type="file" id="fileInput" accept="image/*,.zip" multiple>
+            
+            <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📁</div>
+                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 2px;">Pilih Foto (.zip) atau Pilih Banyak</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Kualitas 25% | Maks Res 1920p (4 Core)</div>
+            </div>
+
+            <div id="processingSection" class="hidden" style="margin-top: 12px;">
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Proses</div>
+                        <div class="stat-value" id="progressText">0 / 0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Hemat</div>
+                        <div class="stat-value" id="savingsText" style="color: var(--success);">0%</div>
+                    </div>
+                </div>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+
+                <div class="log-box" id="logBox">Menyiapkan sistem OPFS & 4-core...</div>
+            </div>
+
+            <div id="actionSection" class="hidden" style="margin-top: 12px;">
+                <a id="downloadBtn" class="btn btn-success">Unduh Hasil (.zip)</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">Pesan</div>
+
+    <script>
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        function logMessage(msg) {
+            const logBox = document.getElementById('logBox');
+            logBox.innerHTML += `> ${msg}<br>`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // Fungsi ambil tanggal dari nama file dan paksa maju +8 jam
+        function extractDateFromName(filename) {
+            const regex = /(\d{4})(\d{2})(\d{2})[_\s-]?[_\s]?(\d{2})(\d{2})(\d{2})/;
+            const match = filename.match(regex);
+            if (match) {
+                const yyyy = parseInt(match[1], 10);
+                const mm = parseInt(match[2], 10) - 1;
+                const dd = parseInt(match[3], 10);
+                const hh = parseInt(match[4], 10);
+                const min = parseInt(match[5], 10);
+                const ss = parseInt(match[6], 10);
+                const date = new Date(yyyy, mm, dd, hh, min, ss);
+                if (!isNaN(date.getTime())) {
+                    // Paksa waktu dimajukan +8 jam sesuai permintaan
+                    date.setHours(date.getHours() + 8);
+                    return date;
+                }
+            }
+            return new Date(); 
+        }
+
+        let opfsRoot = null;
+        async function initOPFS() {
+            try {
+                if ('storage' in navigator && 'getDirectory' in navigator.storage) {
+                    opfsRoot = await navigator.storage.getDirectory();
+                    logMessage("OPFS aktif.");
+                }
+            } catch (e) {
+                logMessage("OPFS fallback memory.");
+            }
+        }
+        initOPFS();
+
+        const workerCode = `
+            self.onmessage = async function(e) {
+                const { id, fileData, fileName } = e.data;
+                try {
+                    const blob = new Blob([fileData]);
+                    const bitmap = await createImageBitmap(blob);
+                    
+                    let width = bitmap.width;
+                    let height = bitmap.height;
+                    const maxLimit = 1920;
+
+                    let minDim = Math.min(width, height);
+                    if (minDim > maxLimit) {
+                        const scale = maxLimit / minDim;
+                        width = Math.round(width * scale);
+                        height = Math.round(height * scale);
+                    }
+
+                    const canvas = new OffscreenCanvas(width, height);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(bitmap, 0, 0, width, height);
+
+                    const compressedBlob = await canvas.convertToBlob({
+                        type: 'image/jpeg',
+                        quality: 0.25
+                    });
+
+                    const arrayBuffer = await compressedBlob.arrayBuffer();
+                    self.postMessage({ id, success: true, resultBuffer: arrayBuffer, fileName, origSize: fileData.byteLength, newSize: compressedBlob.size }, [arrayBuffer]);
+                } catch (err) {
+                    self.postMessage({ id, success: false, error: err.message, fileName });
+                }
+            };
+        `;
+        const workerBlob = new Blob([workerCode], { type: 'application/javascript' });
+        const workerUrl = URL.createObjectURL(workerBlob);
+        
+        const workers = [new Worker(workerUrl), new Worker(workerUrl), new Worker(workerUrl), new Worker(workerUrl)];
+        let workerStatuses = [true, true, true, true];
+
+        let fileQueue = [];
+        let processedResults = [];
+        let totalOriginalSize = 0;
+        let totalCompressedSize = 0;
+        let totalFilesCount = 0;
+        let completedCount = 0;
+
+        document.getElementById('fileInput').addEventListener('change', async function(e) {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+
+            document.getElementById('processingSection').classList.remove('hidden');
+            document.getElementById('actionSection').classList.add('hidden');
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('logBox').innerHTML = '';
+            
+            processedResults = [];
+            totalOriginalSize = 0;
+            totalCompressedSize = 0;
+            completedCount = 0;
+            fileQueue = [];
+
+            logMessage(`Memuat ${files.length} item...`);
+
+            for (let file of files) {
+                if (file.name.endsWith('.zip')) {
+                    try {
+                        const zip = new JSZip();
+                        const zipContent = await zip.loadAsync(file);
+                        for (let relativePath in zipContent.files) {
+                            let zipEntry = zipContent.files[relativePath];
+                            if (!zipEntry.dir && /\.(jpe?g|png|webp|heic|bmp)$/i.test(zipEntry.name)) {
+                                const content = await zipEntry.async('arrayBuffer');
+                                fileQueue.push({ name: zipEntry.name.split('/').pop(), data: content });
+                            }
+                        }
+                    } catch (err) {
+                        showToast(`Gagal baca zip: ${file.name}`);
+                    }
+                } else if (file.type.startsWith('image/') || /\.(jpe?g|png|webp|heic|bmp)$/i.test(file.name)) {
+                    const content = await file.arrayBuffer();
+                    fileQueue.push({ name: file.name, data: content });
+                }
+            }
+
+            totalFilesCount = fileQueue.length;
+            if (totalFilesCount === 0) {
+                showToast("Tidak ada gambar valid.");
+                document.getElementById('processingSection').classList.add('hidden');
+                return;
+            }
+
+            updateProgressDisplay();
+            dispatchQueue();
+        });
+
+        function dispatchQueue() {
+            for (let i = 0; i < workers.length; i++) {
+                if (workerStatuses[i] && fileQueue.length > 0) {
+                    runWorkerTask(i);
+                }
+            }
+        }
+
+        function runWorkerTask(workerIndex) {
+            if (fileQueue.length === 0) return;
+            workerStatuses[workerIndex] = false;
+            const item = fileQueue.shift();
+            const taskId = Math.random().toString(36).substring(7);
+
+            const worker = workers[workerIndex];
+            worker.onmessage = async function(e) {
+                if (e.data.id === taskId) {
+                    completedCount++;
+                    if (e.data.success) {
+                        totalOriginalSize += e.data.origSize;
+                        totalCompressedSize += e.data.newSize;
+                        let finalName = e.data.fileName.replace(/\.[^/.]+$/, "") + ".jpg";
+                        processedResults.push({ name: finalName, data: e.data.resultBuffer });
+                    } else {
+                        logMessage(`Lewati ${e.data.fileName}: Format tidak didukung`);
+                    }
+
+                    updateProgressDisplay();
+
+                    if (fileQueue.length > 0) {
+                        runWorkerTask(workerIndex);
+                    } else {
+                        workerStatuses[workerIndex] = true;
+                        if (workerStatuses.every(s => s === true) && completedCount >= totalFilesCount) {
+                            finalizeBatch();
+                        }
+                    }
+                }
+            };
+
+            worker.postMessage({ id: taskId, fileData: item.data, fileName: item.name }, [item.data]);
+        }
+
+        function updateProgressDisplay() {
+            document.getElementById('progressText').textContent = `${completedCount} / ${totalFilesCount}`;
+            const percent = totalFilesCount > 0 ? (completedCount / totalFilesCount) * 100 : 0;
+            document.getElementById('progressBar').style.width = `${percent}%`;
+
+            if (totalOriginalSize > 0) {
+                const savedPercent = Math.max(0, Math.round((1 - (totalCompressedSize / totalOriginalSize)) * 100));
+                document.getElementById('savingsText').textContent = `${savedPercent}%`;
+            }
+        }
+
+        async function finalizeBatch() {
+            logMessage("Menyusun ZIP dengan waktu +8 jam...");
+            const zip = new JSZip();
+            
+            processedResults.forEach(res => {
+                const fileDate = extractDateFromName(res.name);
+                zip.file(res.name, res.data, { date: fileDate });
+            });
+
+            const now = new Date();
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const gmt8Date = new Date(utc + (3600000 * 8));
+            
+            const yyyy = gmt8Date.getFullYear();
+            const mm = String(gmt8Date.getMonth() + 1).padStart(2, '0');
+            const dd = String(gmt8Date.getDate()).padStart(2, '0');
+            const hh = String(gmt8Date.getHours()).padStart(2, '0');
+            const min = String(gmt8Date.getMinutes()).padStart(2, '0');
+            const ss = String(gmt8Date.getSeconds()).padStart(2, '0');
+
+            const zipFilename = `Foto Hemat - ${yyyy}${mm}${dd}_${hh}${min}${ss} (JPG).zip`;
+
+            try {
+                const content = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+                const downloadUrl = URL.createObjectURL(content);
+                
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.href = downloadUrl;
+                downloadBtn.download = zipFilename;
+                
+                document.getElementById('actionSection').classList.remove('hidden');
+                logMessage("Selesai!");
+                showToast("Kompresi selesai! Waktu dimajukan 8 jam.");
+            } catch (err) {
+                logMessage("Gagal menyusun ZIP.");
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <!-- Viewport tag agar skala pas di layar HP -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Audio L-R Filter</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        
+        /* Wadah Utama Pas Layar HP */
+        .container { width: 100%; max-width: 400px; background: #1e1e1e; padding: 24px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); text-align: center; }
+        h1 { font-size: 1.4rem; margin-bottom: 8px; font-weight: 600; color: #ff4757; }
+        .subtitle { font-size: 0.85rem; color: #a4b0be; margin-bottom: 24px; line-height: 1.4; }
+        
+        /* Area Unggah File / Pilih Lagu */
+        .file-box { border: 2px dashed #444; padding: 20px; border-radius: 12px; margin-bottom: 20px; position: relative; background: #252525; cursor: pointer; }
+        .file-box:active { background: #2a2a2a; }
+        .file-box p { font-size: 0.9rem; color: #1e90ff; font-weight: bold; }
+        #fileInput { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .file-name { margin-top: 8px; font-size: 0.8rem; color: #2ed573; font-weight: 500; display: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Audio Player Bawaan HP */
+        audio { width: 100%; margin-bottom: 24px; border-radius: 8px; outline: none; }
+        
+        /* Tombol Kontrol Jempol-Friendly */
+        .btn-group { display: flex; flex-direction: column; gap: 12px; }
+        button { width: 100%; padding: 16px; font-size: 1rem; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; transition: background 0.2s, transform 0.1s; -webkit-tap-highlight-color: transparent; }
+        button:active { transform: scale(0.98); }
+        
+        .btn-normal { background-color: #2ed573; color: #fff; }
+        .btn-normal.active { background-color: #26af5f; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); border: 2px solid #fff; }
+        
+        .btn-lr { background-color: #1e90ff; color: #fff; }
+        .btn-lr.active { background-color: #1a7ae0; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); border: 2px solid #fff; }
+        
+        /* Status Mode */
+        .status-tag { display: inline-block; margin-top: 16px; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; background: #2f3542; color: #ced6e0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Vocal Remover (L-R)</h1>
+        <p class="subtitle">Unggah lagu stereo Anda. Efek ini bekerja paling baik untuk menghilangkan vokal tengah.</p>
+        
+        <!-- Input File Komponen HP -->
+        <div class="file-box">
+            <p>📱 Ketuk untuk Pilih Audio/Lagu</p>
+            <span class="file-name" id="fileName">Belum ada file</span>
+            <input type="file" id="fileInput" accept="audio/*">
+        </div>
+
+        <!-- Audio Tag -->
+        <audio id="audioSource" controls></audio>
+        
+        <!-- Pilihan Mode Audio -->
+        <div class="btn-group">
+            <button id="btnNormal" class="btn-normal active">🎵 Audio Normal (Stereo)</button>
+            <button id="btnLR" class="btn-lr">🎤 Aktifkan Efek L - R</button>
+        </div>
+
+        <div class="status-tag" id="statusMode">Mode Saat Ini: Normal</div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const audioElement = document.getElementById('audioSource');
+        const btnNormal = document.getElementById('btnNormal');
+        const btnLR = document.getElementById('btnLR');
+        const statusMode = document.getElementById('statusMode');
+
+        let audioCtx;
+        let source;
+        let splitter;
+        let gainInverter;
+        let merger;
+
+        // Mendengarkan saat user memilih file dari HP
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Tampilkan nama file di layar UI
+                fileName.textContent = file.name;
+                fileName.style.display = 'block';
+                
+                // Ubah file lokal menjadi URL sementara yang bisa diputar <audio>
+                const fileURL = URL.createObjectURL(file);
+                audioElement.src = fileURL;
+                
+                // Reset ulang sistem audio jika ganti lagu
+                resetAudioNodes();
+                setModeNormal();
+            }
+        });
+
+        function initAudio() {
+            // Browser HP memerlukan interaksi user sebelum mengaktifkan AudioContext
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                source = audioCtx.createMediaElementSource(audioElement);
+                splitter = audioCtx.createChannelSplitter(2);
+                gainInverter = audioCtx.createGain();
+                gainInverter.gain.value = -1; // Membalik fase kanal kanan
+                merger = audioCtx.createChannelMerger(2);
+            }
+        }
+
+        function resetAudioNodes() {
+            if (source) {
+                source.disconnect();
+                splitter.disconnect();
+                gainInverter.disconnect();
+                merger.disconnect();
+            }
+        }
+
+        function setModeNormal() {
+            initAudio();
+            resetAudioNodes();
+
+            // Sinyal langsung bypass tanpa manipulasi
+            source.connect(audioCtx.destination);
+            
+            // Perbarui UI Tombol Aktif
+            btnNormal.classList.add('active');
+            btnLR.classList.remove('active');
+            statusMode.textContent = "Mode Saat Ini: Normal";
+        }
+
+        function setModeLR() {
+            initAudio();
+            resetAudioNodes();
+
+            // Jalur pemrosesan L - R
+            source.connect(splitter);
+
+            // Kirim kanal kiri (0) ke input kiri dan kanan di merger
+            splitter.connect(merger, 0, 0); 
+            splitter.connect(merger, 0, 1); 
+
+            // Kirim kanal kanan (1) ke pembalik fase (-1)
+            splitter.connect(gainInverter, 1);
+
+            // Gabungkan kanal kanan yang terbalik ke merger kiri dan kanan
+            gainInverter.connect(merger, 0, 0);
+            gainInverter.connect(merger, 0, 1);
+
+            // Output merger dikirim ke speaker/headset HP
+            merger.connect(audioCtx.destination);
+
+            // Perbarui UI Tombol Aktif
+            btnLR.classList.add('active');
+            btnNormal.classList.remove('active');
+            statusMode.textContent = "Mode Saat Ini: Efek L-R Aktif";
+        }
+
+        // Event Listener Tombol
+        btnNormal.addEventListener('click', () => {
+            if(!audioElement.src) return alert("Pilih file lagunya terlebih dahulu!");
+            setModeNormal();
+        });
+
+        btnLR.addEventListener('click', () => {
+            if(!audioElement.src) return alert("Pilih file lagunya terlebih dahulu!");
+            setModeLR();
+        });
+    </script>
+</body>
+</html>

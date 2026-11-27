@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binary Stream v5 - Asset Manager Pro</title>
+    <style>
+        :root {
+            --bg: #0a0a0a; --panel: #161616; --text: #ffffff; --border: #222;
+            --btn-bg: #333; --accent-green: #2ecc71; --accent-blue: #3498db; --accent-purple: #bb86fc;
+            --accent-grey: #4d4d4d; --accent-yellow: #fbc02d; --accent-red: #e74c3c;
+        }
+        body {
+            margin: 0; padding: 20px; background: var(--bg); color: var(--text);
+            font-family: 'Calibri', sans-serif; display: flex; flex-direction: column; align-items: center;
+        }
+        .container { width: 100%; max-width: 450px; padding-bottom: 50px; }
+        header { padding: 10px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; text-align: center; }
+        .section { background: var(--panel); border: 1px solid var(--border); padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+        h3 { font-size: 0.75rem; letter-spacing: 2px; opacity: 0.5; margin-top: 0; text-transform: uppercase; }
+        
+        .upload-area {
+            background: var(--btn-bg); color: white; padding: 15px; border-radius: 8px; 
+            border: 1px dashed #555; text-align: center; cursor: pointer; font-size: 0.85rem; transition: 0.2s;
+        }
+        
+        input[type="text"] {
+            background: var(--bg); color: var(--text); border: 1px solid var(--border);
+            padding: 10px; width: 100%; border-radius: 6px; box-sizing: border-box;
+            margin-top: 10px; font-family: monospace; font-size: 0.8rem; outline: none;
+        }
+
+        .action-row { display: flex; gap: 8px; margin-top: 10px; }
+        button {
+            flex: 1; padding: 12px; border-radius: 8px; border: none;
+            font-weight: bold; cursor: pointer; font-size: 0.75rem; transition: 0.2s;
+        }
+        .btn-id { background: var(--accent-purple); color: white; }
+        .btn-no-id { background: var(--accent-grey); color: white; }
+        .btn-export-all { background: var(--accent-yellow); color: black; width: 100%; margin-top: 10px; font-size: 0.85rem; }
+        
+        /* List Antrean */
+        #queue-container { margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px; }
+        .queue-item {
+            background: #1e1e1e; padding: 10px; border-radius: 8px; margin-bottom: 8px;
+            display: flex; flex-direction: column; gap: 5px; border: 1px solid #333;
+        }
+        .q-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: #888; }
+        .btn-del { background: var(--accent-red); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.6rem; width: auto; flex: none; }
+        
+        /* Decoder Results */
+        .result-item {
+            background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 10px; margin-top: 10px;
+            text-align: left;
+        }
+        .res-id { color: var(--accent-purple); font-weight: bold; font-size: 0.8rem; margin-bottom: 8px; display: block; }
+        .btn-dl-small { background: var(--accent-yellow); color: black; width: 100%; margin-top: 8px; padding: 8px; }
+
+        .preview-box img, .preview-box video { max-width: 100%; border-radius: 5px; margin-top: 5px; display: block; }
+        audio { width: 100%; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div style="font-weight: bold; font-size: 1.1rem; letter-spacing: 1px;">BINARY STREAM V5</div>
+        <div style="font-size: 0.7rem; color: #888;">Multi-Asset Bundler & Restoration</div>
+    </header>
+
+    <div class="section">
+        <h3>1. Encoder (Media -> TXT)</h3>
+        <div class="upload-area" onclick="document.getElementById('enc-in').click()">
+            SELECT FILE TO CONVERT
+        </div>
+        <input type="file" id="enc-in" style="display:none" onchange="updateFileInfo()">
+        
+        <div id="file-info" style="font-size:0.7rem; margin-top:10px; color:#888; display:none;">
+            File: <span id="target-name" style="color:white"></span>
+        </div>
+
+        <input type="text" id="asset-id" placeholder="Masukkan ID">
+        
+        <div class="action-row">
+            <button class="btn-id" onclick="addToQueue()">+ TAMBAH KE DAFTAR</button>
+            <button class="btn-no-id" onclick="instantExport()">INSTANT EXPORT</button>
+        </div>
+
+        <div id="queue-section" style="display: none;">
+            <div id="queue-container">
+                <h3 style="margin-bottom: 10px;">Antrean Gabungan (<span id="queue-count">0</span>)</h3>
+                <div id="queue-list"></div>
+            </div>
+            <button class="btn-export-all" onclick="exportAllQueue()">GABUNGAN FILE (DENGAN ID)</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>2. Decoder (TXT -> Media)</h3>
+        <div class="upload-area" onclick="document.getElementById('dec-in').click()" style="border-color: var(--accent-purple);">
+            IMPORT .TXT FILE
+        </div>
+        <input type="file" id="dec-in" accept=".txt" style="display:none" onchange="decodeProcess(this)">
+        
+        <div id="decode-results-list">
+            <!-- Asset yang didecode muncul di sini satu-satu -->
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedFile = null;
+    let assetQueue = [];
+
+    function updateFileInfo() {
+        const fileInput = document.getElementById('enc-in');
+        selectedFile = fileInput.files[0];
+        if (selectedFile) {
+            document.getElementById('file-info').style.display = 'block';
+            document.getElementById('target-name').innerText = selectedFile.name;
+            const cleanID = selectedFile.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            document.getElementById('asset-id').value = "asset_" + cleanID;
+        }
+    }
+
+    function addToQueue() {
+        if (!selectedFile) return;
+        const assetID = document.getElementById('asset-id').value.trim();
+        if (!assetID) return alert("ID wajib diisi!");
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            assetQueue.push({
+                id: assetID,
+                fileName: selectedFile.name,
+                base64: e.target.result
+            });
+            renderQueue();
+            resetInputs();
+        };
+        reader.readAsDataURL(selectedFile);
+    }
+
+    function instantExport() {
+        if (!selectedFile) return alert("Pilih file dulu!");
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            downloadTxt(selectedFile.name.split('.')[0] + ".txt", e.target.result);
+        };
+        reader.readAsDataURL(selectedFile);
+    }
+
+    function resetInputs() {
+        document.getElementById('enc-in').value = "";
+        selectedFile = null;
+        document.getElementById('file-info').style.display = 'none';
+        document.getElementById('asset-id').value = "";
+    }
+
+    function renderQueue() {
+        const list = document.getElementById('queue-list');
+        const section = document.getElementById('queue-section');
+        const count = document.getElementById('queue-count');
+        list.innerHTML = "";
+        count.innerText = assetQueue.length;
+        section.style.display = assetQueue.length > 0 ? "block" : "none";
+
+        assetQueue.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = "queue-item";
+            div.innerHTML = `
+                <div class="q-header">
+                    <span>${item.fileName}</span>
+                    <button class="btn-del" onclick="removeFromQueue(${index})">HAPUS</button>
+                </div>
+                <input type="text" value="${item.id}" onchange="assetQueue[${index}].id = this.value" placeholder="Edit ID">
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function removeFromQueue(index) {
+        assetQueue.splice(index, 1);
+        renderQueue();
+    }
+
+    function exportAllQueue() {
+        if (assetQueue.length === 0) return;
+        const combinedContent = assetQueue.map(item => `id=${item.id}=${item.base64}`).join('\n\n');
+        downloadTxt(`bundle_${new Date().getTime()}.txt`, combinedContent);
+    }
+
+    function downloadTxt(name, content) {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        a.click();
+    }
+
+    // --- DECODER ---
+
+    function decodeProcess(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const resultsContainer = document.getElementById('decode-results-list');
+        resultsContainer.innerHTML = ""; // Clear old results
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const rawContent = e.target.result.trim();
+            const blocks = rawContent.split(/\n\s*\n/);
+            
+            blocks.forEach((block, idx) => {
+                let data = block.trim();
+                let id = "no_id_found";
+                
+                if (data.startsWith('id=')) {
+                    const parts = data.split('=');
+                    if (parts.length >= 3) {
+                        id = parts[1];
+                        data = parts.slice(2).join('=');
+                    }
+                }
+
+                createResultItem(id, data, resultsContainer);
+            });
+        };
+        reader.readAsText(file);
+    }
+
+    function createResultItem(id, data, container) {
+        const div = document.createElement('div');
+        div.className = "result-item";
+        
+        let previewHtml = "";
+        if (data.startsWith('data:image')) previewHtml = `<img src="${data}">`;
+        else if (data.startsWith('data:video')) previewHtml = `<video src="${data}" controls></video>`;
+        else if (data.startsWith('data:audio')) previewHtml = `<audio src="${data}" controls></audio>`;
+        else previewHtml = `<div style="font-size:0.7rem; color:#888;">(No Preview Available)</div>`;
+
+        div.innerHTML = `
+            <span class="res-id">ID: ${id}</span>
+            <div class="preview-box">${previewHtml}</div>
+            <button class="btn-dl-small" onclick="downloadAsset('${id}', '${data}')">DOWNLOAD FILE INI</button>
+        `;
+        container.appendChild(div);
+    }
+
+    async function downloadAsset(id, data) {
+        try {
+            const res = await fetch(data);
+            const blob = await res.blob();
+            
+            let ext = "";
+            const mime = data.split(';')[0].split(':')[1];
+            if (mime.includes("jpeg")) ext = ".jpg";
+            else if (mime.includes("png")) ext = ".png";
+            else if (mime.includes("mpeg")) ext = ".mp3";
+            else if (mime.includes("mp4")) ext = ".mp4";
+            else if (mime.includes("officedocument")) ext = ".docx";
+            
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = id + (id.includes(".") ? "" : ext);
+            a.click();
+        } catch(e) {
+            console.error("Gagal download", e);
+        }
+    }
+</script>
+
+</body>
+</html>

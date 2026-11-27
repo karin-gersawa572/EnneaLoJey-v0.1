@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Audio Engine: Pemotong Presisi & Konverter Batch OPFS dan Fitur Minimize 20261025</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- JSZip CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .gradient-text {
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    /* Widget Minimalist Pulse Animation */
+    @keyframes pulse-subtle {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.03); opacity: 0.9; }
+    }
+    .widget-active-glow {
+      animation: pulse-subtle 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-full font-sans antialiased flex flex-col justify-between selection:bg-indigo-500 selection:text-white relative">
+
+  <!-- ==================== FLOATING MINIMIZE BUTTON (TOP RIGHT) ==================== -->
+  <button id="floating-minimize-btn" onclick="toggleWidgetMode(true)" title="Minimize Mode Widget" class="fixed top-3 right-3 z-50 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-indigo-400 text-sm font-bold transition-all duration-250 opacity-100 pointer-events-auto shadow-xl backdrop-blur flex items-center gap-1.5 cursor-pointer">
+    <span>小</span>
+    <i class="fa-solid fa-down-left-and-up-right-to-center text-xs"></i>
+  </button>
+
+  <!-- ==================== MAIN UI CONTAINER ==================== -->
+  <div id="full-ui-container" class="flex flex-col min-h-screen justify-between w-full pt-4">
+
+    <main class="max-w-6xl mx-auto w-full px-4 py-4 flex-1">
+
+      <!-- STORAGE NOTICE BANNER -->
+      <div class="mb-6 p-3 bg-slate-800/80 border border-slate-700/80 rounded-xl text-xs flex items-center justify-between">
+        <div class="flex items-center gap-2 text-slate-300">
+          <i class="fa-solid fa-hard-drive text-indigo-400 text-sm"></i>
+          <span>Penyimpanan Sistem: <strong id="storage-engine-badge" class="text-indigo-300">Memeriksa OPFS/IndexedDB...</strong></span>
+        </div>
+        <span class="text-[11px] text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 font-medium">
+          <i class="fa-solid fa-shield-halved mr-1"></i> Anti Aw Snap / Anti OOM
+        </span>
+      </div>
+
+      <!-- PIPELINE STEPPER INFO -->
+      <div id="pipeline-stepper-banner" class="mb-6 bg-gradient-to-r from-indigo-950/60 to-purple-950/60 border border-indigo-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 text-lg shrink-0">
+            1 ➔ 2
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-slate-100">Master Audio Pipeline Otomatis</h2>
+            <p class="text-xs text-slate-400">Upload rekaman panjang &rarr; Dipotong persis 20:00 (1200s) &rarr; Langsung dikonversi ke Opus 16kbps tanpa membebankan RAM HP.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN UPLOAD ZONE -->
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 backdrop-blur shadow-2xl mb-8">
+        
+        <div id="drop-zone" class="border-2 border-dashed border-slate-600 hover:border-indigo-500 bg-slate-900/40 hover:bg-indigo-950/20 transition-all rounded-xl p-8 text-center cursor-pointer group flex flex-col items-center justify-center min-h-[200px]">
+          <input type="file" id="audio-input" accept="audio/*,.m4a,.mp3,.wav,.aac,.ogg,.flac" class="hidden">
+          
+          <div class="w-14 h-14 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 group-hover:scale-110 group-hover:bg-indigo-600/20 transition-all flex items-center justify-center text-indigo-400 mb-3">
+            <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+          </div>
+
+          <p class="text-base font-semibold text-slate-200 mb-1" id="upload-title">
+            Klik atau Seret Rekaman Audio Panjang ke Sini
+          </p>
+          <p class="text-xs text-slate-400 mb-3" id="upload-subtitle">
+            Otomatis dipotong 20 menit &amp; dikonversi ke Opus 16kbps (Mendukung M4A, MP3, WAV, AAC, OGG, FLAC)
+          </p>
+        </div>
+
+        <!-- FILE METADATA PANEL -->
+        <div id="file-info-panel" class="hidden mt-6 bg-slate-900/80 border border-slate-700 rounded-xl p-5">
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
+            <div class="flex items-center space-x-3 overflow-hidden w-full md:w-auto">
+              <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-file-audio text-lg"></i>
+              </div>
+              <div class="truncate">
+                <p id="file-name" class="font-medium text-slate-200 truncate">nama_file.m4a</p>
+                <p id="file-meta" class="text-xs text-slate-400">Durasi: --:-- | Ukuran: -- MB</p>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-2 bg-indigo-950/50 border border-indigo-800/50 px-3 py-1.5 rounded-lg shrink-0">
+              <i class="fa-solid fa-layer-group text-indigo-400 text-xs"></i>
+              <span class="text-xs text-indigo-200">Akan terbagi jadi: <strong id="chunk-count-badge" class="text-indigo-400">0 Bagian</strong></span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">Awalan Nama File (YYYYMMDD_HHMMSS):</label>
+              <div class="relative">
+                <input type="text" id="prefix-input" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 font-mono" placeholder="20260918_204500">
+                <button id="btn-reset-date" title="Gunakan tanggal file/sekarang" class="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-600">
+                  <i class="fa-solid fa-rotate-right"></i> Reset
+                </button>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-1">Pratinjau: <span id="preview-filename" class="text-indigo-300 font-mono">20260918_204500_001.opus</span></p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">Bitrate Opus (bps):</label>
+              <div class="flex items-center space-x-2">
+                <input type="number" id="bitrate-input" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 font-mono" value="16000" min="6000" max="320000" step="1000">
+                <span class="text-xs text-slate-400">bps</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-1">Default: 16000 (16 kbps). Tepat &amp; hemat ruang penyimpanan.</p>
+            </div>
+          </div>
+
+          <button id="btn-start-process" class="mt-5 w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 cursor-pointer">
+            <i class="fa-solid fa-play"></i>
+            <span id="btn-process-text">Mulai Proses Pipeline Otomatis</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- PROGRESS CARD -->
+      <div id="progress-card" class="hidden bg-slate-800/80 border border-indigo-500/30 rounded-2xl p-6 mb-8 backdrop-blur shadow-xl">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-circle-notch fa-spin text-indigo-400"></i>
+            <span id="progress-status" class="text-sm font-medium text-slate-200">Membaca file audio...</span>
+          </div>
+          <span id="progress-percent" class="text-sm font-bold text-indigo-400">0%</span>
+        </div>
+        
+        <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden p-0.5 border border-slate-700">
+          <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-200" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- QUEUE & RESULTS CARD -->
+      <div id="result-card" class="hidden bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 backdrop-blur shadow-2xl">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-700/80 pb-4 mb-6">
+          <div>
+            <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-emerald-400"></i> Antrian Hasil Pengolahan
+            </h3>
+            <p class="text-xs text-slate-400">Semua file tersimpan aman di memori lokal anti-crash.</p>
+          </div>
+
+          <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+            <button id="btn-export-zip" onclick="exportAllToZip()" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm py-2 px-4 rounded-xl transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-2 disabled:opacity-50">
+              <i class="fa-solid fa-file-zipper"></i>
+              <span>Unduh Semua (.ZIP)</span>
+            </button>
+            
+            <button onclick="clearAllQueue()" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium text-sm py-2 px-4 rounded-xl transition-all flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-trash"></i>
+              <span>Bersihkan</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="queue-list" class="space-y-3">
+          <!-- Rendered items -->
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="border-t border-slate-800 bg-slate-950/60 py-4 text-center text-xs text-slate-500">
+      <p>Master Audio Engine All-in-One &bull; Client-Side OPFS &amp; ISO M4A Muxer</p>
+    </footer>
+
+  </div>
+
+  <!-- ==================== WIDGET MINIMALIS OVERLAY UI ==================== -->
+  <div id="widget-ui-container" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm">
+    <input type="file" id="widget-audio-input" accept="audio/*,.m4a,.mp3,.wav,.aac,.ogg,.flac" class="hidden">
+    
+    <div class="bg-slate-900/90 border-2 border-indigo-500/50 rounded-2xl p-3 shadow-2xl flex items-center gap-3 backdrop-blur-md">
+      
+      <!-- IDLE STATE: UPLOAD BUTTON "音" -->
+      <div id="widget-state-idle" class="flex items-center gap-3">
+        <button id="widget-drop-btn" onclick="triggerWidgetUpload()" class="w-12 h-12 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl flex items-center justify-center transition-all shadow-lg shadow-indigo-600/40 hover:scale-105 active:scale-95 cursor-pointer">
+          音
+        </button>
+      </div>
+
+      <!-- PROCESSING / COMPLETE STATE: PROGRESS "[X]%" or "✔" -->
+      <div id="widget-state-active" class="hidden flex items-center gap-3">
+        <button id="widget-progress-btn" onclick="handleWidgetAction()" class="h-12 px-4 rounded-xl bg-slate-950 border border-emerald-500/40 hover:border-emerald-400 text-emerald-400 font-mono font-bold text-lg flex items-center justify-center transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer">
+          <span id="widget-progress-text">0%</span>
+        </button>
+      </div>
+
+      <!-- ALWAYS PRESENT: ENLARGE BUTTON "大" -->
+      <button onclick="toggleWidgetMode(false)" title="Perbesar Kembali ke UI Penuh" class="w-12 h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xl flex items-center justify-center transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer">
+        大
+      </button>
+
+    </div>
+  </div>
+
+  <script>
+    // State Variables
+    let selectedFile = null;
+    let fileDuration = 0;
+    let fileQueue = [];
+    let isProcessing = false;
+    let isWidgetMode = false;
+
+    // Storage Engine State
+    let storageMode = 'none';
+    let opfsInputDir = null;
+    let opfsOutputDir = null;
+    let idbDatabase = null;
+
+    const INTERVAL_SECONDS = 1200; // 20 Menit (1200 Detik)
+    const SAMPLE_RATE_TABLE = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
+
+    // DOM Elements
+    const dropZone = document.getElementById('drop-zone');
+    const audioInput = document.getElementById('audio-input');
+    const fileInfoPanel = document.getElementById('file-info-panel');
+    const fileNameEl = document.getElementById('file-name');
+    const fileMetaEl = document.getElementById('file-meta');
+    const chunkCountBadge = document.getElementById('chunk-count-badge');
+    const prefixInput = document.getElementById('prefix-input');
+    const previewFilename = document.getElementById('preview-filename');
+    const btnResetDate = document.getElementById('btn-reset-date');
+    const btnStartProcess = document.getElementById('btn-start-process');
+    
+    const progressCard = document.getElementById('progress-card');
+    const progressStatus = document.getElementById('progress-status');
+    const progressBar = document.getElementById('progress-bar');
+
+    const resultCard = document.getElementById('result-card');
+    const queueList = document.getElementById('queue-list');
+    const btnExportZip = document.getElementById('btn-export-zip');
+
+    // Widget & Floating Button DOM Elements
+    const fullUiContainer = document.getElementById('full-ui-container');
+    const widgetUiContainer = document.getElementById('widget-ui-container');
+    const widgetAudioInput = document.getElementById('widget-audio-input');
+    const widgetStateIdle = document.getElementById('widget-state-idle');
+    const widgetStateActive = document.getElementById('widget-state-active');
+    const widgetProgressText = document.getElementById('widget-progress-text');
+    const widgetDropBtn = document.getElementById('widget-drop-btn');
+    const floatingMinimizeBtn = document.getElementById('floating-minimize-btn');
+
+    // Scroll Listener for Floating "小" Button (Fade in/out 250ms)
+    window.addEventListener('scroll', () => {
+      if (window.scrollY <= 10) {
+        floatingMinimizeBtn.classList.remove('opacity-0', 'pointer-events-none');
+        floatingMinimizeBtn.classList.add('opacity-100', 'pointer-events-auto');
+      } else {
+        floatingMinimizeBtn.classList.remove('opacity-100', 'pointer-events-auto');
+        floatingMinimizeBtn.classList.add('opacity-0', 'pointer-events-none');
+      }
+    });
+
+    // Init OPFS / IndexedDB Storage Engine
+    async function initStorageEngine() {
+      if (navigator.storage && navigator.storage.getDirectory) {
+        try {
+          const root = await navigator.storage.getDirectory();
+          opfsInputDir = await root.getDirectoryHandle('input_queue', { create: true });
+          opfsOutputDir = await root.getDirectoryHandle('output_queue', { create: true });
+          storageMode = 'opfs';
+          document.getElementById('storage-engine-badge').textContent = 'OPFS Storage Active (Sangat Cepat)';
+          return true;
+        } catch (e) { console.warn(e); }
+      }
+
+      try {
+        idbDatabase = await openIDB();
+        storageMode = 'idb';
+        document.getElementById('storage-engine-badge').textContent = 'IndexedDB Storage Active (Aman OOM)';
+        return true;
+      } catch (err) {
+        document.getElementById('storage-engine-badge').textContent = 'RAM Only Mode';
+        return false;
+      }
+    }
+
+    function openIDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open('MasterAudioWorkstationDB', 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('input_files')) db.createObjectStore('input_files');
+          if (!db.objectStoreNames.contains('output_files')) db.createObjectStore('output_files');
+        };
+        req.onsuccess = (e) => resolve(e.target.result);
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    function idbPut(store, key, val) {
+      return new Promise((res, rej) => {
+        const tx = idbDatabase.transaction(store, 'readwrite');
+        tx.objectStore(store).put(val, key);
+        tx.oncomplete = () => res();
+        tx.onerror = (e) => rej(e.target.error);
+      });
+    }
+
+    function idbGet(store, key) {
+      return new Promise((res, rej) => {
+        const tx = idbDatabase.transaction(store, 'readonly');
+        const req = tx.objectStore(store).get(key);
+        req.onsuccess = () => res(req.result);
+        req.onerror = (e) => rej(e.target.error);
+      });
+    }
+
+    initStorageEngine();
+
+    // Widget Mode Toggle Function
+    function toggleWidgetMode(enableWidget) {
+      isWidgetMode = enableWidget;
+      if (enableWidget) {
+        fullUiContainer.classList.add('hidden');
+        floatingMinimizeBtn.classList.add('hidden');
+        widgetUiContainer.classList.remove('hidden');
+        updateWidgetStateUI();
+      } else {
+        widgetUiContainer.classList.add('hidden');
+        fullUiContainer.classList.remove('hidden');
+        floatingMinimizeBtn.classList.remove('hidden');
+      }
+    }
+
+    function updateWidgetStateUI() {
+      if (!isWidgetMode) return;
+
+      if (fileQueue.length === 0) {
+        // Idle State
+        widgetStateIdle.classList.remove('hidden');
+        widgetStateActive.classList.add('hidden');
+      } else {
+        // Active / Complete State
+        widgetStateIdle.classList.add('hidden');
+        widgetStateActive.classList.remove('hidden');
+
+        const total = fileQueue.length;
+        const completedCount = fileQueue.filter(i => i.status === 'selesai').length;
+        const strictPercent = Math.floor((completedCount / total) * 100);
+
+        if (completedCount === total && total > 0) {
+          widgetProgressText.textContent = "✔";
+        } else {
+          widgetProgressText.textContent = `[${strictPercent}%]`;
+        }
+      }
+    }
+
+    function triggerWidgetUpload() {
+      widgetAudioInput.click();
+    }
+
+    widgetAudioInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleWidgetFileSelection(e.target.files[0]);
+      }
+    });
+
+    // Drag and drop for widget
+    widgetDropBtn.addEventListener('dragover', (e) => { e.preventDefault(); widgetDropBtn.classList.add('bg-indigo-400'); });
+    widgetDropBtn.addEventListener('dragleave', () => { widgetDropBtn.classList.remove('bg-indigo-400'); });
+    widgetDropBtn.addEventListener('drop', (e) => {
+      e.preventDefault();
+      widgetDropBtn.classList.remove('bg-indigo-400');
+      if (e.dataTransfer.files.length > 0) {
+        handleWidgetFileSelection(e.dataTransfer.files[0]);
+      }
+    });
+
+    async function handleWidgetFileSelection(file) {
+      selectedFile = file;
+      const defaultPrefix = detectSmartPrefix(file);
+      const defaultBitrate = 16000;
+
+      // Prompt browser bawaan
+      const userInput = window.prompt("Masukkan Awalan Nama File & Bitrate (Format: NAMA_FILE --- BITRATE):", `${defaultPrefix} --- ${defaultBitrate}`);
+      
+      if (!userInput) return; // User membatalkan
+
+      let chosenPrefix = defaultPrefix;
+      let chosenBitrate = defaultBitrate;
+
+      if (userInput.includes('---')) {
+        const parts = userInput.split('---');
+        chosenPrefix = parts[0].trim() || defaultPrefix;
+        chosenBitrate = parseInt(parts[1].trim(), 10) || defaultBitrate;
+      } else {
+        chosenPrefix = userInput.trim() || defaultPrefix;
+      }
+
+      prefixInput.value = chosenPrefix;
+      document.getElementById('bitrate-input').value = chosenBitrate;
+
+      // Jalankan pemotongan dan konversi otomatis
+      await executePipelineProcess(chosenPrefix, chosenBitrate);
+    }
+
+    function handleWidgetAction() {
+      if (fileQueue.length === 0) return;
+
+      const total = fileQueue.length;
+      const completedCount = fileQueue.filter(i => i.status === 'selesai').length;
+
+      if (completedCount === total && total > 0) {
+        // Jika sudah 100% "✔", langsung picu unduhan ZIP
+        exportAllToZip();
+      } else {
+        // Tampilkan status pemrosesan real-time via alert() bawaan
+        let statusListStr = "STATUS PROCESSING OPUS:\n\n";
+        fileQueue.forEach(item => {
+          let label = "[Dalam antrean]";
+          if (item.status === 'selesai') label = "[Selesai]";
+          else if (item.status === 'proses') label = "[Memproses]";
+          else if (item.status === 'gagal') label = "[Gagal]";
+
+          statusListStr += `${label} ${item.nama_output}\n`;
+        });
+
+        alert(statusListStr);
+      }
+    }
+
+    // Helpers
+    function formatTime(sec) {
+      if (!sec || isNaN(sec)) return "00:00.00";
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = Math.floor(sec % 60);
+      const ms = Math.round((sec % 1) * 100);
+      const msStr = ms.toString().padStart(2, '0');
+      const sStr = s.toString().padStart(2, '0');
+      const mStr = m.toString().padStart(2, '0');
+      return h > 0 ? `${h.toString().padStart(2, '0')}:${mStr}:${sStr}.${msStr}` : `${mStr}:${sStr}.${msStr}`;
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function detectSmartPrefix(file) {
+      if (!file) return generateTimestampString(new Date());
+      const match = file.name.match(/(19\d\d|20\d\d)[-_.]?(0[1-9]|1[0-2])[-_.]?(0[1-9]|[12]\d|3[01])[\s-_.]?([01]\d|2[0-3])[-_.]?([0-5]\d)[-_.]?([0-5]\d)?/);
+      if (match) {
+        return `${match[1]}${String(match[2]).padStart(2, '0')}${String(match[3]).padStart(2, '0')}_${match[4]||'00'}${match[5]||'00'}${match[6]||'00'}`;
+      }
+      return generateTimestampString(file.lastModified ? new Date(file.lastModified) : new Date());
+    }
+
+    function generateTimestampString(d) {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    }
+
+    function updateFilenamePreview() {
+      const prefix = prefixInput.value.trim() || generateTimestampString(new Date());
+      previewFilename.textContent = `${prefix}_001.opus`;
+    }
+
+    // Event Listeners for File Input
+    dropZone.addEventListener('click', () => audioInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-500', 'bg-indigo-950/30'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500', 'bg-indigo-950/30'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-indigo-500', 'bg-indigo-950/30');
+      if (e.dataTransfer.files.length > 0) handleFileSelection(e.dataTransfer.files);
+    });
+
+    audioInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) handleFileSelection(e.target.files);
+    });
+
+    prefixInput.addEventListener('input', updateFilenamePreview);
+    btnResetDate.addEventListener('click', () => {
+      if (selectedFile) prefixInput.value = detectSmartPrefix(selectedFile);
+      updateFilenamePreview();
+    });
+
+    async function handleFileSelection(fileList) {
+      selectedFile = fileList[0];
+      fileNameEl.textContent = selectedFile.name;
+      prefixInput.value = detectSmartPrefix(selectedFile);
+      updateFilenamePreview();
+
+      progressCard.classList.remove('hidden');
+      progressStatus.textContent = 'Membaca durasi file...';
+      progressBar.style.width = '30%';
+
+      fileDuration = await getAudioDuration(selectedFile);
+      const totalChunks = Math.max(1, Math.ceil(fileDuration / INTERVAL_SECONDS));
+
+      fileMetaEl.textContent = `Durasi Total: ${formatTime(fileDuration)} | Ukuran: ${formatBytes(selectedFile.size)}`;
+      chunkCountBadge.textContent = `${totalChunks} Bagian`;
+
+      progressCard.classList.add('hidden');
+      fileInfoPanel.classList.remove('hidden');
+    }
+
+    function getAudioDuration(file) {
+      return new Promise((res) => {
+        const audio = new Audio();
+        const url = URL.createObjectURL(file);
+        audio.src = url;
+        audio.onloadedmetadata = () => { URL.revokeObjectURL(url); res(audio.duration || 0); };
+        audio.onerror = () => { URL.revokeObjectURL(url); res(0); };
+      });
+    }
+
+    // Pipeline process implementation
+    async function executePipelineProcess(overridePrefix, overrideBitrate) {
+      if (!selectedFile) return;
+
+      fileInfoPanel.classList.add('hidden');
+      progressCard.classList.remove('hidden');
+      progressStatus.textContent = 'Memotong audio presisi 1200s...';
+      progressBar.style.width = '20%';
+
+      try {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        let chunks = [];
+
+        try {
+          const m4aInfo = parseM4AAtomsUniversal(arrayBuffer);
+          chunks = splitM4AToChunks(m4aInfo, arrayBuffer, INTERVAL_SECONDS, 'm4a');
+        } catch (e) {
+          console.warn("Demuxer bypass, fallback to WebAudio slice", e);
+          chunks = await fallbackSplitWebAudio(selectedFile, INTERVAL_SECONDS);
+        }
+
+        const prefix = overridePrefix || prefixInput.value.trim() || detectSmartPrefix(selectedFile);
+        const targetBitrate = overrideBitrate || parseInt(document.getElementById('bitrate-input').value, 10) || 16000;
+
+        fileQueue = [];
+        for (let i = 0; i < chunks.length; i++) {
+          const idxStr = String(i + 1).padStart(3, '0');
+          const outName = `${prefix}_${idxStr}.opus`;
+          const chunkBlob = chunks[i].blob;
+
+          const id = 'chunk_' + Date.now() + '_' + i;
+
+          if (storageMode === 'opfs') {
+            const handle = await opfsInputDir.getFileHandle(id, { create: true });
+            const w = await handle.createWritable();
+            await w.write(chunkBlob);
+            await w.close();
+          } else if (storageMode === 'idb') {
+            await idbPut('input_files', id, chunkBlob);
+          }
+
+          fileQueue.push({
+            id: id,
+            fileBlob: chunkBlob,
+            nama_asli: `${prefix}_${idxStr}.m4a`,
+            nama_base: `${prefix}_${idxStr}`,
+            ukuran: chunkBlob.size,
+            duration: chunks[i].duration,
+            status: 'antre',
+            progress: 0,
+            nama_output: outName,
+            customBitrate: targetBitrate,
+            blobResult: null
+          });
+        }
+
+        progressCard.classList.add('hidden');
+        renderQueueUI();
+        resultCard.classList.remove('hidden');
+
+        startBatchConversion();
+
+      } catch (err) {
+        console.error(err);
+        alert("Gagal memproses file audio.");
+        progressCard.classList.add('hidden');
+        fileInfoPanel.classList.remove('hidden');
+      }
+    }
+
+    // Main Process Action Button
+    btnStartProcess.addEventListener('click', async () => {
+      await executePipelineProcess();
+    });
+
+    async function startBatchConversion() {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      for (let i = 0; i < fileQueue.length; i++) {
+        const item = fileQueue[i];
+        if (item.status !== 'antre') continue;
+
+        item.status = 'proses';
+        item.progress = 10;
+        renderQueueUI();
+
+        try {
+          let inputBlob = item.fileBlob;
+          if (!inputBlob) {
+            if (storageMode === 'opfs') {
+              const h = await opfsInputDir.getFileHandle(item.id);
+              inputBlob = await h.getFile();
+            } else if (storageMode === 'idb') {
+              inputBlob = await idbGet('input_files', item.id);
+            }
+          }
+
+          const bitrateToUse = item.customBitrate || 16000;
+
+          const opusBlob = await convertFileToOpus(inputBlob, bitrateToUse, (pct) => {
+            item.progress = pct;
+            const pEl = document.getElementById(`prog-${item.id}`);
+            if (pEl) pEl.style.width = pct + '%';
+          });
+
+          item.blobResult = opusBlob;
+          item.status = 'selesai';
+          item.progress = 100;
+
+          if (storageMode === 'opfs') {
+            const h = await opfsOutputDir.getFileHandle(item.nama_output, { create: true });
+            const w = await h.createWritable();
+            await w.write(opusBlob);
+            await w.close();
+          } else if (storageMode === 'idb') {
+            await idbPut('output_files', item.nama_output, opusBlob);
+          }
+
+        } catch (err) {
+          console.error(err);
+          item.status = 'gagal';
+        }
+
+        renderQueueUI();
+      }
+
+      isProcessing = false;
+    }
+
+    async function convertFileToOpus(fileBlob, targetBitrate, onProgress) {
+      const arrayBuffer = await fileBlob.arrayBuffer();
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      await audioCtx.close();
+
+      if (onProgress) onProgress(25);
+
+      const channels = Math.min(decodedBuffer.numberOfChannels, 2);
+      const sampleRate = 48000;
+
+      let buffer48k = decodedBuffer;
+      if (decodedBuffer.sampleRate !== 48000) {
+        const offlineCtx = new OfflineAudioContext(channels, Math.ceil(decodedBuffer.duration * sampleRate), sampleRate);
+        const src = offlineCtx.createBufferSource();
+        src.buffer = decodedBuffer;
+        src.connect(offlineCtx.destination);
+        src.start(0);
+        buffer48k = await offlineCtx.startRendering();
+      }
+
+      const totalSamples = buffer48k.length;
+      const serial = (Math.random() * 0xFFFFFFFF) >>> 0;
+      const oggPages = [];
+
+      oggPages.push(createOggPage(0x02, 0n, 0, [buildOpusHead(channels)], serial));
+      oggPages.push(createOggPage(0x00, 0n, 1, [buildOpusTags()], serial));
+
+      let pageSeq = 2;
+      let currentGranule = 0n;
+      let pendingPackets = [];
+
+      const encoder = new AudioEncoder({
+        output: (chunk) => {
+          const data = new Uint8Array(chunk.byteLength);
+          chunk.copyTo(data);
+          currentGranule += BigInt(Math.round((chunk.duration || 20000) * 48 / 1000));
+          pendingPackets.push(data);
+          if (pendingPackets.length >= 40) {
+            oggPages.push(createOggPage(0x00, currentGranule, pageSeq++, pendingPackets, serial));
+            pendingPackets = [];
+          }
+        },
+        error: (e) => console.error(e)
+      });
+
+      const bitrateToUse = targetBitrate || 16000;
+      encoder.configure({ codec: 'opus', sampleRate: sampleRate, numberOfChannels: channels, bitrate: bitrateToUse });
+
+      const frameSize = 960;
+      let offset = 0;
+
+      while (offset < totalSamples) {
+        const end = Math.min(offset + frameSize, totalSamples);
+        const len = end - offset;
+        const planeData = new Float32Array(len * channels);
+        for (let c = 0; c < channels; c++) planeData.set(buffer48k.getChannelData(c).subarray(offset, end), c * len);
+
+        const audioData = new AudioData({
+          format: 'f32-planar', sampleRate: sampleRate, numberOfFrames: len, numberOfChannels: channels,
+          timestamp: Math.round((offset / sampleRate) * 1000000), data: planeData
+        });
+
+        encoder.encode(audioData);
+        audioData.close();
+        offset += frameSize;
+
+        if (offset % (frameSize * 300) === 0 || offset >= totalSamples) {
+          if (onProgress) onProgress(Math.min(98, Math.round((offset / totalSamples) * 70) + 25));
+          await new Promise(r => setTimeout(r, 0));
+        }
+      }
+
+      await encoder.flush();
+      encoder.close();
+
+      if (pendingPackets.length > 0) oggPages.push(createOggPage(0x04, currentGranule, pageSeq++, pendingPackets, serial));
+      if (onProgress) onProgress(100);
+      return new Blob(oggPages, { type: 'audio/ogg; codecs=opus' });
+    }
+
+    // Rendering UI Queue
+    function renderQueueUI() {
+      queueList.innerHTML = '';
+      if (fileQueue.length === 0) {
+        resultCard.classList.add('hidden');
+        updateWidgetStateUI();
+        return;
+      }
+
+      fileQueue.forEach((item, idx) => {
+        const el = document.createElement('div');
+        el.className = 'bg-slate-900/80 border border-slate-700/80 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4';
+
+        const statusPill = item.status === 'selesai' ? '<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full text-xs font-semibold">Selesai</span>' :
+                          (item.status === 'proses' ? '<span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2.5 py-1 rounded-full text-xs font-semibold"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Memproses</span>' :
+                          '<span class="bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1 rounded-full text-xs font-semibold">Dalam Antrian</span>');
+
+        let audioUrl = '';
+        if (item.blobResult) {
+          audioUrl = URL.createObjectURL(item.blobResult);
+        }
+
+        if (!item.customBitrate) {
+          const globalBitrateInput = document.getElementById('bitrate-input');
+          item.customBitrate = (globalBitrateInput && globalBitrateInput.value) ? parseInt(globalBitrateInput.value, 10) : 16000;
+        }
+
+        el.innerHTML = `
+          <div class="flex items-center space-x-3 overflow-hidden w-full sm:w-auto flex-1">
+            <span class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 font-bold text-xs flex items-center justify-center border border-indigo-500/20 shrink-0">#${idx + 1}</span>
+            <div class="truncate flex-1">
+              <p class="font-mono text-xs font-semibold text-slate-200 truncate">${item.nama_output}</p>
+              <p class="text-[11px] text-slate-400">Ukuran: ${formatBytes(item.ukuran)} ${item.duration ? `| Durasi: ${formatTime(item.duration)}` : ''}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <label class="text-[11px] text-slate-400 shrink-0">Bitrate:</label>
+            <input type="number" 
+                   value="${item.customBitrate}" 
+                   onchange="fileQueue[${idx}].customBitrate = parseInt(this.value, 10) || 16000"
+                   ${item.status !== 'antre' ? 'disabled' : ''} 
+                   class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-100 font-mono focus:outline-none focus:border-indigo-500 ${item.status !== 'antre' ? 'opacity-50' : ''}" 
+                   step="1000" min="6000" max="320000">
+            <span class="text-[11px] text-slate-400">bps</span>
+          </div>
+
+          <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
+            ${statusPill}
+            ${audioUrl ? `<audio controls src="${audioUrl}" class="h-8 max-w-[160px]"></audio>
+            <a href="${audioUrl}" download="${item.nama_output}" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1">
+              <i class="fa-solid fa-download"></i> Unduh
+            </a>` : ''}
+          </div>
+        `;
+
+        if (item.status === 'proses') {
+          const prog = document.createElement('div');
+          prog.className = 'w-full bg-slate-950 rounded-full h-1.5 overflow-hidden mt-2 border border-slate-800';
+          prog.innerHTML = `<div id="prog-${item.id}" class="bg-indigo-500 h-full" style="width: ${item.progress}%"></div>`;
+          el.appendChild(prog);
+        }
+
+        queueList.appendChild(el);
+      });
+
+      btnExportZip.disabled = !fileQueue.some(i => i.status === 'selesai');
+      updateWidgetStateUI();
+    }
+
+    async function exportAllToZip() {
+      const completed = fileQueue.filter(i => i.status === 'selesai');
+      if (completed.length === 0) return;
+
+      btnExportZip.disabled = true;
+      btnExportZip.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Mengemas ZIP...`;
+
+      const zip = new JSZip();
+      for (const item of completed) {
+        let blob = item.blobResult;
+        if (!blob) {
+          if (storageMode === 'opfs') {
+            const h = await opfsOutputDir.getFileHandle(item.nama_output);
+            blob = await h.getFile();
+          } else if (storageMode === 'idb') {
+            blob = await idbGet('output_files', item.nama_output);
+          }
+        }
+        if (blob) zip.file(item.nama_output, blob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(zipBlob);
+      a.download = `Hasil_Batch_Audio_${Date.now()}.zip`;
+      a.click();
+
+      btnExportZip.disabled = false;
+      btnExportZip.innerHTML = `<i class="fa-solid fa-file-zipper"></i> <span>Unduh Semua (.ZIP)</span>`;
+    }
+
+    async function clearAllQueue() {
+      if (isProcessing) return;
+      fileQueue = [];
+      renderQueueUI();
+      try {
+        if (storageMode === 'opfs') {
+          const root = await navigator.storage.getDirectory();
+          await root.removeEntry('input_queue', { recursive: true }).catch(() => {});
+          await root.removeEntry('output_queue', { recursive: true }).catch(() => {});
+        }
+      } catch (e) {}
+      await initStorageEngine();
+    }
+
+    /* MP4 Atom Demuxer Codecs */
+    class MP4BoxWriter {
+      static box(type, ...children) {
+        let payloadLength = 0;
+        const parts = [];
+        for (const child of children) {
+          if (child instanceof Uint8Array) { parts.push(child); payloadLength += child.byteLength; }
+          else if (typeof child === 'string') { const buf = new TextEncoder().encode(child); parts.push(buf); payloadLength += buf.byteLength; }
+        }
+        const totalSize = 8 + payloadLength;
+        const header = new Uint8Array(8);
+        const view = new DataView(header.buffer);
+        view.setUint32(0, totalSize);
+        for (let i = 0; i < 4; i++) header[4 + i] = type.charCodeAt(i);
+
+        const res = new Uint8Array(totalSize);
+        res.set(header, 0);
+        let offset = 8;
+        for (const part of parts) { res.set(part, offset); offset += part.byteLength; }
+        return res;
+      }
+      static uint32(val) { const buf = new Uint8Array(4); new DataView(buf.buffer).setUint32(0, val); return buf; }
+      static bytes(arr) { return new Uint8Array(arr); }
+    }
+
+    function createM4ABuffer(aacFrames, audioConfig, sampleRate, exactDurationSec) {
+      const numFrames = aacFrames.length;
+      let mdatPayloadSize = 0;
+      for (let i = 0; i < numFrames; i++) mdatPayloadSize += aacFrames[i].byteLength;
+
+      const ftyp = MP4BoxWriter.box('ftyp', 'M4A ', MP4BoxWriter.uint32(0), 'M4A ', 'mp42', 'isom');
+      const mdatHeader = new Uint8Array(8);
+      const mdatView = new DataView(mdatHeader.buffer);
+      mdatView.setUint32(0, 8 + mdatPayloadSize);
+      mdatHeader[4] = 109; mdatHeader[5] = 100; mdatHeader[6] = 97; mdatHeader[7] = 116;
+
+      const mdatPayloadOffset = ftyp.byteLength + 8;
+      const timescale = sampleRate;
+      const durationTicks = Math.round(exactDurationSec * timescale);
+
+      const mvhdPayload = new Uint8Array(100);
+      const mvhdView = new DataView(mvhdPayload.buffer);
+      mvhdView.setUint32(12, timescale);
+      mvhdView.setUint32(16, durationTicks);
+      mvhdView.setUint32(20, 0x00010000);
+      mvhdView.setUint16(24, 0x0100);
+      mvhdView.setUint32(36, 0x00010000);
+      mvhdView.setUint32(52, 0x00010000);
+      mvhdView.setUint32(68, 0x40000000);
+      mvhdView.setUint32(96, 2);
+
+      const mvhd = MP4BoxWriter.box('mvhd', mvhdPayload);
+
+      const tkhdPayload = new Uint8Array(84);
+      const tkhdView = new DataView(tkhdPayload.buffer);
+      tkhdView.setUint32(0, 0x0000000F);
+      tkhdView.setUint32(12, 1);
+      tkhdView.setUint32(20, durationTicks);
+      tkhdView.setUint16(36, 0x0100);
+      tkhdView.setUint32(40, 0x00010000);
+      tkhdView.setUint32(56, 0x00010000);
+      tkhdView.setUint32(72, 0x40000000);
+
+      const tkhd = MP4BoxWriter.box('tkhd', tkhdPayload);
+
+      const mdhdPayload = new Uint8Array(24);
+      const mdhdView = new DataView(mdhdPayload.buffer);
+      mdhdView.setUint32(12, timescale);
+      mdhdView.setUint32(16, durationTicks);
+      mdhdView.setUint16(20, 0x55C4);
+
+      const mdhd = MP4BoxWriter.box('mdhd', mdhdPayload);
+
+      const hdlrPayload = new Uint8Array(20);
+      hdlrPayload[8] = 115; hdlrPayload[9] = 111; hdlrPayload[10] = 117; hdlrPayload[11] = 110;
+      const nameBytes = new TextEncoder().encode("SoundHandler\0");
+      const hdlrFull = new Uint8Array(20 + nameBytes.byteLength);
+      hdlrFull.set(hdlrPayload, 0);
+      hdlrFull.set(nameBytes, 20);
+
+      const hdlr = MP4BoxWriter.box('hdlr', hdlrFull);
+      const smhd = MP4BoxWriter.box('smhd', new Uint8Array(8));
+
+      const urlBox = MP4BoxWriter.box('url ', MP4BoxWriter.bytes([0, 0, 0, 1]));
+      const drefPayload = new Uint8Array(8);
+      new DataView(drefPayload.buffer).setUint32(4, 1);
+      const dref = MP4BoxWriter.box('dref', drefPayload, urlBox);
+      const dinf = MP4BoxWriter.box('dinf', dref);
+
+      const objectType = audioConfig.profile ? audioConfig.profile + 1 : 2;
+      const srIdx = audioConfig.sampleRateIdx !== undefined ? audioConfig.sampleRateIdx : 4;
+      const chanCfg = audioConfig.channelConfig || 2;
+
+      const asc1 = ((objectType & 0x1F) << 3) | ((srIdx >> 1) & 0x07);
+      const asc2 = ((srIdx & 0x01) << 7) | ((chanCfg & 0x0F) << 3);
+
+      const esdsPayload = MP4BoxWriter.bytes([
+        0, 0, 0, 0, 0x03, 25, 0, 1, 0, 0x04, 17, 0x40, 0x15,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x05, 2, asc1, asc2, 0x06, 1, 2
+      ]);
+      const esds = MP4BoxWriter.box('esds', esdsPayload);
+
+      const mp4aHeader = new Uint8Array(28);
+      const mp4aView = new DataView(mp4aHeader.buffer);
+      mp4aView.setUint16(6, 1);
+      mp4aView.setUint16(16, chanCfg);
+      mp4aView.setUint16(18, 16);
+      mp4aView.setUint32(24, sampleRate << 16);
+
+      const mp4a = MP4BoxWriter.box('mp4a', mp4aHeader, esds);
+      const stsdPayload = new Uint8Array(8);
+      new DataView(stsdPayload.buffer).setUint32(4, 1);
+      const stsd = MP4BoxWriter.box('stsd', stsdPayload, mp4a);
+
+      const sttsPayload = new Uint8Array(16);
+      const sttsView = new DataView(sttsPayload.buffer);
+      sttsView.setUint32(4, 1);
+      sttsView.setUint32(8, numFrames);
+      sttsView.setUint32(12, 1024);
+      const stts = MP4BoxWriter.box('stts', sttsPayload);
+
+      const stszPayload = new Uint8Array(12 + numFrames * 4);
+      const stszView = new DataView(stszPayload.buffer);
+      stszView.setUint32(4, 0);
+      stszView.setUint32(8, numFrames);
+      for (let i = 0; i < numFrames; i++) stszView.setUint32(12 + i * 4, aacFrames[i].byteLength);
+      const stsz = MP4BoxWriter.box('stsz', stszPayload);
+
+      const stscPayload = new Uint8Array(20);
+      const stscView = new DataView(stscPayload.buffer);
+      stscView.setUint32(4, 1);
+      stscView.setUint32(8, 1);
+      stscView.setUint32(12, numFrames);
+      stscView.setUint32(16, 1);
+      const stsc = MP4BoxWriter.box('stsc', stscPayload);
+
+      const stcoPayload = new Uint8Array(12);
+      const stcoView = new DataView(stcoPayload.buffer);
+      stcoView.setUint32(4, 1);
+      stcoView.setUint32(8, mdatPayloadOffset);
+      const stco = MP4BoxWriter.box('stco', stcoPayload);
+
+      const stbl = MP4BoxWriter.box('stbl', stsd, stts, stsz, stsc, stco);
+      const minf = MP4BoxWriter.box('minf', smhd, dinf, stbl);
+      const mdia = MP4BoxWriter.box('mdia', mdhd, hdlr, minf);
+      const trak = MP4BoxWriter.box('trak', tkhd, mdia);
+      const moov = MP4BoxWriter.box('moov', mvhd, trak);
+
+      const totalFileLength = ftyp.byteLength + 8 + mdatPayloadSize + moov.byteLength;
+      const finalBuffer = new Uint8Array(totalFileLength);
+
+      let pos = 0;
+      finalBuffer.set(ftyp, pos); pos += ftyp.byteLength;
+      finalBuffer.set(mdatHeader, pos); pos += 8;
+
+      for (let i = 0; i < numFrames; i++) {
+        finalBuffer.set(aacFrames[i], pos);
+        pos += aacFrames[i].byteLength;
+      }
+      finalBuffer.set(moov, pos);
+      return finalBuffer;
+    }
+
+    function findBoxInView(view, start, end, targetType) {
+      let p = start;
+      while (p + 8 <= end) {
+        if (p < 0 || p + 8 > view.byteLength) break;
+        let size = view.getUint32(p);
+        const type = String.fromCharCode(view.getUint8(p+4), view.getUint8(p+5), view.getUint8(p+6), view.getUint8(p+7));
+        if (size === 1) {
+          if (p + 16 > end) break;
+          size = Number(view.getBigUint64(p + 8));
+        } else if (size === 0) { size = end - p; }
+        if (size < 8) break;
+        if (type === targetType) return { start: p, headerSize: (view.getUint32(p) === 1 ? 16 : 8), size: size, end: p + size };
+        p += size;
+      }
+      return null;
+    }
+
+    function parseM4AAtomsUniversal(arrayBuffer) {
+      const view = new DataView(arrayBuffer);
+      const totalLen = arrayBuffer.byteLength;
+
+      const moov = findBoxInView(view, 0, totalLen, 'moov');
+      if (!moov) throw new Error("File bukan M4A/MP4 standar ISO.");
+
+      let trakPos = moov.start + moov.headerSize;
+      let audioStbl = null;
+      let audioTimescale = 44100;
+      let detectedSR = 44100;
+      let audioConfig = { profile: 1, sampleRateIdx: 4, channelConfig: 2 };
+
+      while (trakPos < moov.end) {
+        const trak = findBoxInView(view, trakPos, moov.end, 'trak');
+        if (!trak) break;
+
+        const mdia = findBoxInView(view, trak.start + trak.headerSize, trak.end, 'mdia');
+        if (mdia) {
+          let isAudio = false;
+          const hdlr = findBoxInView(view, mdia.start + mdia.headerSize, mdia.end, 'hdlr');
+          if (hdlr && hdlr.start + hdlr.headerSize + 12 <= hdlr.end) {
+            const hType = String.fromCharCode(view.getUint8(hdlr.start + hdlr.headerSize + 8), view.getUint8(hdlr.start + hdlr.headerSize + 9), view.getUint8(hdlr.start + hdlr.headerSize + 10), view.getUint8(hdlr.start + hdlr.headerSize + 11));
+            if (hType === 'soun') isAudio = true;
+          }
+
+          const mdhd = findBoxInView(view, mdia.start + mdia.headerSize, mdia.end, 'mdhd');
+          let timescale = 44100;
+          if (mdhd) {
+            const version = view.getUint8(mdhd.start + mdhd.headerSize);
+            timescale = (version === 0) ? view.getUint32(mdhd.start + mdhd.headerSize + 12) : view.getUint32(mdhd.start + mdhd.headerSize + 20);
+          }
+
+          const minf = findBoxInView(view, mdia.start + mdia.headerSize, mdia.end, 'minf');
+          if (minf) {
+            const stbl = findBoxInView(view, minf.start + minf.headerSize, minf.end, 'stbl');
+            if (stbl) {
+              const stsd = findBoxInView(view, stbl.start + stbl.headerSize, stbl.end, 'stsd');
+              if (stsd) {
+                audioStbl = stbl;
+                audioTimescale = timescale;
+
+                const entryStart = stsd.start + stsd.headerSize + 8;
+                if (entryStart + 36 <= stsd.end) {
+                  const channels = view.getUint16(entryStart + 24);
+                  const sampleRate = view.getUint32(entryStart + 32) >> 16;
+                  detectedSR = sampleRate > 0 ? sampleRate : timescale;
+
+                  let freqIdx = SAMPLE_RATE_TABLE.indexOf(detectedSR);
+                  if (freqIdx === -1) freqIdx = SAMPLE_RATE_TABLE.indexOf(timescale);
+                  if (freqIdx === -1) freqIdx = 4;
+
+                  audioConfig = { profile: 1, sampleRateIdx: freqIdx, channelConfig: channels || 2 };
+                }
+                if (isAudio) break;
+              }
+            }
+          }
+        }
+        trakPos = trak.end;
+      }
+
+      if (!audioStbl) throw new Error("Tabel sampel audio tidak ditemukan.");
+
+      const stsz = findBoxInView(view, audioStbl.start + audioStbl.headerSize, audioStbl.end, 'stsz');
+      const stsc = findBoxInView(view, audioStbl.start + audioStbl.headerSize, audioStbl.end, 'stsc');
+      let stco = findBoxInView(view, audioStbl.start + audioStbl.headerSize, audioStbl.end, 'stco');
+      let isCo64 = false;
+      if (!stco) {
+        stco = findBoxInView(view, audioStbl.start + audioStbl.headerSize, audioStbl.end, 'co64');
+        isCo64 = true;
+      }
+
+      const defaultSampleSize = view.getUint32(stsz.start + stsz.headerSize + 4);
+      const sampleCount = view.getUint32(stsz.start + stsz.headerSize + 8);
+      const sampleSizes = new Uint32Array(sampleCount);
+      if (defaultSampleSize > 0) {
+        sampleSizes.fill(defaultSampleSize);
+      } else {
+        let p = stsz.start + stsz.headerSize + 12;
+        for (let i = 0; i < sampleCount; i++) { sampleSizes[i] = view.getUint32(p); p += 4; }
+      }
+
+      const chunkCount = view.getUint32(stco.start + stco.headerSize + 4);
+      const chunkOffsets = [];
+      let cp = stco.start + stco.headerSize + 8;
+      for (let i = 0; i < chunkCount; i++) {
+        if (isCo64) { chunkOffsets.push(Number(view.getBigUint64(cp))); cp += 8; }
+        else { chunkOffsets.push(view.getUint32(cp)); cp += 4; }
+      }
+
+      const stscEntryCount = view.getUint32(stsc.start + stsc.headerSize + 4);
+      const stscEntries = [];
+      let stscp = stsc.start + stsc.headerSize + 8;
+      for (let i = 0; i < stscEntryCount; i++) {
+        stscEntries.push({ firstChunk: view.getUint32(stscp) - 1, samplesPerChunk: view.getUint32(stscp + 4) });
+        stscp += 12;
+      }
+
+      const sampleOffsets = new Float64Array(sampleCount);
+      let currentSample = 0;
+      for (let c = 0; c < chunkCount; c++) {
+        let spc = stscEntries[0].samplesPerChunk;
+        for (let e = stscEntries.length - 1; e >= 0; e--) {
+          if (c >= stscEntries[e].firstChunk) { spc = stscEntries[e].samplesPerChunk; break; }
+        }
+        let offsetInChunk = chunkOffsets[c];
+        for (let s = 0; s < spc && currentSample < sampleCount; s++) {
+          sampleOffsets[currentSample] = offsetInChunk;
+          offsetInChunk += sampleSizes[currentSample];
+          currentSample++;
+        }
+      }
+
+      const totalDurationSec = (sampleCount * 1024) / detectedSR;
+      return { sampleCount, sampleSizes, sampleOffsets, totalDuration: totalDurationSec, audioConfig, sampleRate: detectedSR };
+    }
+
+    function splitM4AToChunks(m4aInfo, rawArrayBuffer, intervalSec = 1200, outputFormat = 'm4a') {
+      const chunks = [];
+      const totalDuration = m4aInfo.totalDuration;
+      const numChunks = Math.ceil(totalDuration / intervalSec);
+      const u8Raw = new Uint8Array(rawArrayBuffer);
+      const targetFramesPerChunk = Math.round((intervalSec * m4aInfo.sampleRate) / 1024);
+
+      let currentSampleIdx = 0;
+
+      for (let chunkIdx = 0; chunkIdx < numChunks; chunkIdx++) {
+        const isLastChunk = (chunkIdx === numChunks - 1);
+        const startSample = currentSampleIdx;
+        let endSample = Math.min(startSample + targetFramesPerChunk, m4aInfo.sampleCount);
+
+        if (isLastChunk) endSample = m4aInfo.sampleCount;
+        if (startSample >= endSample) continue;
+
+        const framePayloads = [];
+        for (let i = startSample; i < endSample; i++) {
+          const sampleSize = m4aInfo.sampleSizes[i];
+          const sampleOffset = m4aInfo.sampleOffsets[i];
+          framePayloads.push(u8Raw.subarray(sampleOffset, sampleOffset + sampleSize));
+        }
+
+        currentSampleIdx = endSample;
+        const exactChunkDuration = isLastChunk ? ((m4aInfo.sampleCount - startSample) * 1024 / m4aInfo.sampleRate) : intervalSec;
+
+        const m4aBuffer = createM4ABuffer(framePayloads, m4aInfo.audioConfig, m4aInfo.sampleRate, exactChunkDuration);
+        const blob = new Blob([m4aBuffer], { type: 'audio/mp4' });
+
+        chunks.push({ blob, duration: exactChunkDuration, index: chunkIdx + 1 });
+      }
+      return chunks;
+    }
+
+    async function fallbackSplitWebAudio(file, intervalSec) {
+      const totalSize = file.size;
+      const totalDuration = fileDuration || 3600;
+      const numChunks = Math.max(1, Math.ceil(totalDuration / intervalSec));
+      const chunkSize = Math.ceil(totalSize / numChunks);
+
+      const chunks = [];
+      for (let i = 0; i < numChunks; i++) {
+        const start = i * chunkSize;
+        const end = Math.min(start + chunkSize, totalSize);
+        const sliceBlob = file.slice(start, end, file.type);
+        chunks.push({ blob: sliceBlob, duration: intervalSec, index: i + 1 });
+      }
+      return chunks;
+    }
+
+    // Ogg Opus Encoder Helpers
+    const CRC32_TABLE = new Uint32Array(256);
+    (function initCRC() {
+      for (let i = 0; i < 256; i++) {
+        let c = i << 24;
+        for (let j = 0; j < 8; j++) c = (c & 0x80000000) ? ((c << 1) ^ 0x04c11db7) : (c << 1);
+        CRC32_TABLE[i] = c >>> 0;
+      }
+    })();
+
+    function calcOggCRC(bytes) {
+      let crc = 0;
+      for (let i = 0; i < bytes.length; i++) crc = ((crc << 8) ^ CRC32_TABLE[((crc >>> 24) ^ bytes[i]) & 0xff]) >>> 0;
+      return crc >>> 0;
+    }
+
+    function createOggPage(headerType, granulePos, pageSeq, packets, serial) {
+      const lacing = [];
+      let totalPayloadSize = 0;
+      for (const pkt of packets) {
+        let len = pkt.byteLength || pkt.length;
+        totalPayloadSize += len;
+        while (len >= 255) { lacing.push(255); len -= 255; }
+        lacing.push(len);
+      }
+
+      const headerLen = 27 + lacing.length;
+      const page = new Uint8Array(headerLen + totalPayloadSize);
+      page[0] = 0x4F; page[1] = 0x67; page[2] = 0x67; page[3] = 0x53; page[5] = headerType;
+
+      const view = new DataView(page.buffer);
+      view.setUint32(6, Number(BigInt(granulePos) & 0xFFFFFFFFn), true);
+      view.setUint32(10, Number((BigInt(granulePos) >> 32n) & 0xFFFFFFFFn), true);
+      view.setUint32(14, serial, true);
+      view.setUint32(18, pageSeq, true);
+      page[26] = lacing.length;
+
+      for (let i = 0; i < lacing.length; i++) page[27 + i] = lacing[i];
+      let offset = headerLen;
+      for (const pkt of packets) { page.set(pkt, offset); offset += pkt.byteLength || pkt.length; }
+
+      view.setUint32(22, calcOggCRC(page), true);
+      return page;
+    }
+
+    function buildOpusHead(channels = 1) {
+      const head = new Uint8Array(19);
+      head.set([0x4F, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64], 0);
+      head[8] = 1; head[9] = channels; head[10] = 0x38; head[11] = 0x01;
+      head[12] = 0x80; head[13] = 0xBB;
+      return head;
+    }
+
+    function buildOpusTags() {
+      const vendor = "Master WebCodecs Encoder";
+      const vendorBytes = new TextEncoder().encode(vendor);
+      const tags = new Uint8Array(8 + 4 + vendorBytes.length + 4);
+      tags.set([0x4F, 0x70, 0x75, 0x73, 0x54, 0x61, 0x67, 0x73], 0);
+      const view = new DataView(tags.buffer);
+      view.setUint32(8, vendorBytes.length, true);
+      tags.set(vendorBytes, 12);
+      return tags;
+    }
+  </script>
+</body>
+</html>

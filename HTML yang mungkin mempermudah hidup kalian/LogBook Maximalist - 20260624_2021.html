@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LogBook - Gersawa Labs</title>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --bg: #000; --panel: #000; --text: #ffffff; --border: #222;
+            --btn-bg: #222; --accent-green: #2ecc71; --accent-grey: #4d4d4d;
+            --accent-red: #ff4d4d; --accent-yellow: #fbc02d; --accent-blue: #5dade2;
+            --n9: #a1887f; --n3: #2ecc71; --n6: #bb86fc;
+            --gersawa-1: #222; --gersawa-2: #fff; --gersawa-3: #222
+        }
+        body.light-mode {
+            --bg: #ffffff; --panel: #ffffff; --text: #111; --border: #ddd;
+            --btn-bg: #d9d9d9;
+            --accent-blue: #5dade2;
+            --gersawa-1: #eee; --gersawa-2: #000; --gersawa-3: #ddd
+        }
+        body {
+            margin: 0; padding: 0; background: var(--bg); color: var(--text);
+            font-family: 'Calibri', sans-serif; height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden; transition: 0.3s;
+            user-select: none; -webkit-user-select: none;
+        }
+        
+        input, textarea { user-select: text; -webkit-user-select: text; }
+
+        header { 
+            padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid var(--border); background: var(--panel); z-index: 1001; min-height: 45px;
+        }
+        
+        .header-left { display: flex; flex-direction: column; justify-content: center; width: 65%; margin-left: 0;}
+        #header-title { border: none; background: transparent; color: var(--text); font-weight: bold; font-size: 1.1rem; width: 100%; outline: none; padding: 0; transition: 0.2s; border-radius: 0 !important; }
+        #header-desc { border: none; background: transparent; color: #888; font-size: 0.75rem; width: 100%; outline: none; padding: 0; margin-top: 2px; transition: 0.2s; display: none; border-radius: 0 !important; }
+
+        .head-tools { display: flex; gap: 15px; align-items: center; font-weight: bold; }
+        #pin-btn { background: var(--btn-bg); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; border: 1px solid transparent; }
+        #pin-btn.active { background: var(--accent-red); color: #fff; }
+
+        main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .tab-content { display: none; padding: 15px; padding-bottom: 110px; }
+        .tab-content.active { display: block; animation: fadeIn 0.25s ease; }
+
+        /* Mission UI */
+        .mission-item {
+            background: var(--panel); margin-bottom: 10px; padding: 12px;
+            border-left: 5px solid var(--text); border-radius: 10px;
+            display: flex; align-items: flex-start; cursor: pointer; border: 1px solid var(--border);
+        }
+        .check-box { 
+            width: 22px; height: 22px; border: 2px solid var(--accent-grey); 
+            border-radius: 50%; margin-right: 15px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            margin-top: 2px;
+        }
+        .mission-item.done .check-box { background: var(--accent-grey); }
+        .mission-item.done .check-box::after { content: '✔'; color: white; font-size: 12px; }
+        .mission-item.done .mission-text-area { text-decoration: line-through; opacity: 0.4; }
+        .ext-data { font-size: 0.65rem; font-weight: bold; }
+
+        /* Nature Stats */
+        .nature-container { display: flex; justify-content: space-around; margin: 20px 0; }
+        .nature-circle { cursor: pointer; position: relative; width: 64px; -webkit-tap-highlight-color: transparent; display: flex; flex-direction: column; align-items: center; }
+        .circle-svg-wrapper { position: relative; width: 64px; height: 64px; }
+        .circle-svg { width: 64px; height: 64px; transform: rotate(-90deg); }
+        .circle-bg { fill: none; stroke: var(--border); stroke-width: 5; }
+        .circle-progress { fill: none; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 188.4; stroke-dashoffset: 188.4; transition: 0.5s; }
+        .circle-text-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; pointer-events: none; transition: 0.3s; }
+        .nature-sub { font-size: 0.6rem; font-weight: bold; opacity: 0.6; margin-top: 8px; text-align: center; width: 100%; }
+
+        /* Mention tags styling */
+        .mention-tag {
+            color: #3498db;
+            font-weight: none;
+            border-bottom: 1px dashed rgba(52, 152, 219, 0.0);
+            padding: 0 2px;
+        }
+
+        /* History, Master Kanji & Friend Tags */
+        .history-card { background: var(--panel); border: 1px solid var(--border); padding: 15px; border-radius: 12px; margin-top: 10px; cursor: pointer; position: relative; transition: transform 0.2s;}
+        .history-card.draggable { padding-left: 32px; } /* Space for drag handle */
+        .history-card.dragging { opacity: 0.8; transform: scale(0.92); box-shadow: 0 5px 15px rgba(0,0,0,0.25); z-index: 100; border-color: var(--accent-green);}
+        
+        .drag-handle {
+            position: absolute; left: 0; top: 0; bottom: 0; width: 30px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0.15; cursor: grab; font-size: 18px; line-height: 0.4; color: var(--text); padding-bottom: 8px;
+        }
+        .drag-handle:active { cursor: grabbing; opacity: 0.5; }
+
+        .master-kanji-row { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 8px; margin-bottom: 6px; }
+        .master-tag { 
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.65rem; padding: 4px 10px; border-radius: 4px; border: 0px solid var(--border);
+            font-weight: bold; background: var(--gersawa-1); line-height: 1;
+        }
+        .friend-tag { 
+            display: inline-flex; align-items: center; justify-content: center;
+            border: 1px solid var(--text); border-radius: 4px; padding: 4px 8px; margin: 5px 6px 5px 0; 
+            font-size: 0.7rem; font-weight: bold; line-height: 1;
+        }
+        .friend-kanji { display: inline-flex; align-items: center; padding-right: 5px; margin-right: 5px; border-right: 1px solid rgba(128,128,128,0.3); height: 100%; }
+
+        /* Dialog UI Styling */
+        .dialogue-box {
+            background: rgba(255,255,255,0.03); border-left: 3px solid var(--gersawa-1);
+            padding: 8px 12px; border-radius: 0 8px 8px 0; font-size: 0.8rem; margin: 8px 0;
+            font-style: italic; color: #dfdfdf; line-height: 1.4;
+        }
+        .light-mode .dialogue-box {
+            background: rgba(0,0,0,0.03); color: #333;
+        }
+        .geotag-text {
+            font-size: 0.65rem; color: #888; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;
+        }
+
+        nav { position: fixed; bottom: 0; left: 0; right: 0; height: 75px; background: var(--panel); display: flex; border-top: 1px solid var(--border); z-index: 1000; -webkit-tap-highlight-color: transparent; transition: opacity 0.3s; }
+        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555; cursor: pointer; }
+        .nav-btn.active { color: var(--text); font-weight: bold; }
+        .nav-icon { font-size: 1.4rem; }
+
+        /* Modal Settings */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; z-index: 2000; overflow: hidden; }
+        .modal.show { display: flex; }
+        
+        .modal-content { background: var(--panel); padding: 20px; border-radius: 15px; width: 85%; max-width: 320px; border: 1px solid var(--border); margin: auto; position: relative; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-height: 90vh; overflow-y: auto; }
+        .modal-content-small { max-width: 250px; text-align: center; } 
+
+        .btn-half { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;}
+        textarea, input, select { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 10px; border-radius: 8px; margin: 4px 0; font-family: inherit; width: 100%; box-sizing: border-box; outline: none; }
+        
+        /* Fix minimum height textarea default agar tidak nutup saat kosong */
+        textarea { resize: none; overflow: hidden; min-height: 80px; }
+        #hist-note-edit { height: 120px !important; overflow-y: auto !important; }
+
+        .search-btn {
+            background: transparent; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            padding: 5px; font-weight: bold;
+        }
+        
+        .pin-indicator { position: absolute; right: 10px; top: -8px; font-size: 0.9rem; background: var(--panel); border: 1px solid var(--border); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: var(--accent-yellow); z-index: 5;}
+
+        .toast-msg {
+            position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: white; padding: 8px 16px;
+            border-radius: 12px; font-size: 0.75rem; font-weight: bold;
+            z-index: 3000; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Kelola Orang CSS Arrow Back */
+        .back-arrow-btn {
+            width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+            background: transparent; border: none; cursor: pointer; padding: 0; outline: none;
+        }
+        .back-arrow-icon {
+            border: solid var(--text); border-width: 0 3px 3px 0;
+            display: inline-block; padding: 4px; transform: rotate(135deg);
+            -webkit-transform: rotate(135deg); opacity: 0.6;
+        }
+        .back-arrow-icon:active { opacity: 1; }
+
+        /* Word Break Fix agar teks tidak nembus layar */
+        .history-card, .history-card * {
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* Modal Tab Styles */
+        .modal-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+        .modal-tab-btn {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #888;
+            border-bottom: 2px solid transparent;
+        }
+        .modal-tab-btn.active {
+            color: var(--text);
+            border-bottom: 2px solid var(--text);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <input type="text" id="header-title" maxlength="100" value="Logical Note" onfocus="handleHeaderFocus()" onblur="handleHeaderBlur()" oninput="updateHeaderUI()">
+        <input type="text" id="header-desc" placeholder="Buat deskripsi" onfocus="handleHeaderFocus()" onblur="handleHeaderBlur()" oninput="updateHeaderUI()">
+    </div>
+    <div class="head-tools">
+        <div id="pin-btn" onclick="togglePin()">PIN</div>
+        <div id="theme-btn" onclick="toggleTheme()" style="cursor:pointer;">夜</div>
+    </div>
+</header>
+
+<main>
+    <div id="tab1" class="tab-content active">
+        <textarea id="mission-note" placeholder="Tulis draf misi di sini...&#10;Gunakan parameter:&#10;/Missiontitle/=Judul Misi&#10;/Missiondate/=yyyy-mm-dd&#10;/Missionextra/=Informasi Tambahan [_red]&#10;/Missiondetails/=Deskripsi Misi&#10;/Missioncolor/=_purple&#10;Gunakan ##MISSION## untuk mengimpor banyak misi." oninput="autoResize(this); updateMissionActionButton()"></textarea>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button onclick="addMission()" style="flex:1; background:var(--text); color:var(--gersawa-1); border:none; padding:12px; border-radius:10px; font-weight:bold; cursor: pointer; font-size:0.8rem;">+ NEW MISSION</button>
+            <button id="btn-mission-action" onclick="handleMissionAction()" style="flex:1; background:var(--accent-grey); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor: pointer; font-size:0.8rem;">EXPOR MISI</button>
+        </div>
+        <div id="mission-list" style="margin-top:15px;"></div>
+    </div>
+
+    <div id="tab2" class="tab-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <span style="font-weight:900; opacity:0.2; letter-spacing:2px; font-size:0.8rem;">LOG BOOK</span>
+            <div style="display:flex; gap:10px; align-items:center;">
+                  <button class="search-btn" onclick="toggleSearch()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+                  </button>
+                <button class="search-btn" onclick="togglePinFilter()" id="btn-pin-filter" style="font-size:1rem; color:var(--text); opacity:0.5;">留</button>
+                <button class="search-btn" onclick="openSortModal()" style="font-size:1rem; color:var(--text);">順</button>
+                <button onclick="saveToHistory()" style="background:var(--n3); border:none; color:#000; padding:6px 16px; border-radius:20px; font-weight:bold; font-size:0.7rem; cursor: pointer;">RECORD</button>
+            </div>
+        </div>
+        
+        <div class="nature-container">
+            <div class="nature-circle" onclick="openNature('N9')">
+                <div class="circle-svg-wrapper">
+                    <svg class="circle-svg"><circle class="circle-bg" cx="32" cy="32" r="30"/><circle id="prog-N9" class="circle-progress" style="stroke:var(--n9)" cx="32" cy="32" r="30"/></svg>
+                    <div id="text-N9" class="circle-text-container">N9</div>
+                </div>
+                <div class="nature-sub">HEALTH</div>
+            </div>
+            <div class="nature-circle" onclick="openNature('N3')">
+                <div class="circle-svg-wrapper">
+                    <svg class="circle-svg"><circle class="circle-bg" cx="32" cy="32" r="30"/><circle id="prog-N3" class="circle-progress" style="stroke:var(--n3)" cx="32" cy="32" r="30"/></svg>
+                    <div id="text-N3" class="circle-text-container">SOCIAL</div>
+                </div>
+                <div class="nature-sub">SOCIAL</div>
+            </div>
+            <div class="nature-circle" onclick="openNature('N6')">
+                <div class="circle-svg-wrapper">
+                    <svg class="circle-svg"><circle class="circle-bg" cx="32" cy="32" r="30"/><circle id="prog-N6" class="circle-progress" style="stroke:var(--n6)" cx="32" cy="32" r="30"/></svg>
+                    <div id="text-N6" class="circle-text-container">N6</div>
+                </div>
+                <div class="nature-sub">BRAIN</div>
+            </div>
+        </div>
+        
+        <textarea id="main-note" placeholder="Write session notes... (Bisa pakai /title/=, /master/=, /status/=, /tag/=, /description/=, /geotag/=, /dialogue/=, /duration/=, /timecolor/=)" oninput="autoResize(this)"></textarea>
+        
+        <input type="text" id="search-bar" placeholder="Cari multi (#けさぐ, Catatan 1x/, Jamal)" style="display:none; margin-top:10px; background:var(--panel); border:1px solid var(--border);" oninput="renderHistory()">
+        
+        <div id="history-list"></div>
+    </div>
+
+    <div id="tab3" class="tab-content">
+        <!-- Pengganti Memory Usage dengan tombol panjang KELOLA RESOURCE -->
+        <button onclick="showToast('Fitur ini belum tersedia')" style="background:var(--panel); border: 1px solid var(--border); color:var(--text); width:100%; padding:15px; border-radius:10px; font-weight:bold; cursor: pointer; margin-bottom: 15px; text-align: left; font-size: 0.85rem;">KELOLA RESOURCE</button>
+        
+        <input type="hidden" id="mem-used" value="1">
+        <input type="hidden" id="mem-total" value="10">
+
+        <div style="margin-bottom: 15px;">
+            <label style="font-size:0.7rem; font-weight:bold; color:gray; margin-left:5px;">Format Nama File JSON</label>
+            <input type="text" id="json-filename" value="File Name - yyyymmdd_hhmm">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button onclick="openManagePeople()" style="background:var(--btn-bg); color:var(--text); border:1px solid var(--border); width:100%; padding:12px; border-radius:8px; font-weight:bold; cursor: pointer;">KELOLA ORANG</button>
+            <div style="display:flex; gap:10px;">
+                <button onclick="exportAll()" class="btn-half" style="background:var(--accent-green); color:black;">SAVE JSON</button>
+                <button onclick="document.getElementById('file-in').click()" class="btn-half" style="background:var(--gersawa-3); color:var(--gersawa-2);">LOAD JSON</button>
+            </div>
+        </div>
+        <input type="file" id="file-in" style="display:none" onchange="importAll(event)">
+    </div>
+
+    <!-- Tab Khusus Kelola Orang (Back Arrow Sederhana & Nav tetap bisa diakses) -->
+    <div id="tab-manage-people" class="tab-content">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+            <button class="back-arrow-btn" onclick="closeManagePeople()"><span class="back-arrow-icon"></span></button>
+            <span style="font-weight:900; opacity:0.3; letter-spacing:2px; font-size:0.8rem;">KELOLA ORANG</span>
+        </div>
+
+        <div style="background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px;">
+            <span style="font-size: 0.85rem; font-weight:bold; color:gray; display:block; margin-bottom:8px;">TAMBAH / PARSE SEBUTAN</span>
+            <textarea id="people-bulk-input" placeholder="Tulis atau tempel teks berisi sebutan di sini untuk ditambahkan.&#10;Contoh: @~Jamal~@ @~Budi~@ @~Andi~@"></textarea>
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button onclick="parseAndAddPeople()" style="flex: 1; background: var(--gersawa-2); color: var(--gersawa-1); border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">TAMBAH ORANG</button>
+                <button onclick="openPeopleListModal()" style="flex: 1; background: var(--btn-bg); color: var(--text); border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">LIHAT DAFTAR</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<nav>
+    <div class="nav-btn active" onclick="switchTab(1)"><span class="nav-icon">任務</span><span style="font-size:0.6rem">MISSION</span></div>
+    <div class="nav-btn" onclick="switchTab(2)"><span class="nav-icon">性格</span><span style="font-size:0.6rem">LOGS</span></div>
+    <div class="nav-btn" onclick="switchTab(3)"><span class="nav-icon">設定</span><span style="font-size:0.6rem">SYSTEM</span></div>
+</nav>
+
+<div id="modal-mission" class="modal" onclick="closeModal(this)"><div class="modal-content" onclick="event.stopPropagation()">
+    <input type="text" id="edit-mission-text" placeholder="Title">
+    <input type="date" id="edit-mission-date">
+    <input type="text" id="edit-mission-ext" placeholder="Extra info e.g., VIP[_red], Urgent" style="margin-top:5px;">
+    <textarea id="edit-mission-desc" placeholder="Description/Details" oninput="autoResize(this)"></textarea>
+    <select id="edit-mission-color">
+        <option value="white">White</option><option value="red">Red</option><option value="green">Green</option><option value="purple">Purple</option><option value="yellow">Yellow</option><option value="blue">Blue</option>
+    </select>
+    <div style="display:flex; gap:10px; margin-top:15px;">
+        <button onclick="applyMissionEdit()" class="btn-half" style="background:var(--text); color:var(--bg)">SAVE</button>
+        <button onclick="upMission()" class="btn-half" style="flex:0.4; background:var(--accent-grey); color:white">UP</button>
+        <button onclick="confirmDel('mission')" class="btn-half" style="flex:0.6; background:var(--accent-red); color:white">DELETE</button>
+    </div>
+</div></div>
+
+<!-- Modal History Terupdate Dengan Pembagian Tab Minimalis Putih -->
+<div id="modal-history" class="modal" onclick="closeModal(this)"><div class="modal-content" onclick="event.stopPropagation()">
+    <div style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: flex-end;">
+        <span style="font-size: 0.7rem; font-weight:bold; color:gray; margin-left:5px;">Panel Detail Catatan</span>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span id="hist-pagination" style="font-size:0.75rem; color:var(--text); font-weight:bold;">Catatan -/-</span>
+            <button onclick="toggleNotePin()" id="btn-note-pin" style="background:none; border:none; color:var(--text); font-size:1.2rem; cursor:pointer; padding:0; outline:none; transition:0.2s;">留</button>
+        </div>
+    </div>
+
+    <!-- Header Tab Modal -->
+    <div class="modal-tabs">
+        <div id="tab-btn-utama" class="modal-tab-btn active" onclick="switchModalTab('utama')">Utama</div>
+        <div id="tab-btn-informasi" class="modal-tab-btn" onclick="switchModalTab('informasi')">Informasi</div>
+        <div id="tab-btn-file" class="modal-tab-btn" onclick="switchModalTab('file')">Lampiran</div>
+    </div>
+
+    <!-- AREA TAB UTAMA -->
+    <div id="modal-tab-utama">
+        <div>
+            <span style="font-size: 0.7rem; font-weight:bold; color:gray; margin-left:5px;">Edit nama</span>
+            <input type="text" id="hist-name-edit">
+        </div>
+        <div style="margin-top: 5px;">
+            <span style="font-size: 0.7rem; font-weight:bold; color:gray; margin-left:5px;">Edit master kanji</span>
+            <input type="text" id="hist-master-kanji" placeholder="Label Master (e.g. けさぐ [_red])">
+        </div>
+        <div style="margin-top: 5px;">
+            <span style="font-size: 0.7rem; font-weight:bold; color:gray; margin-left:5px;">Time Color</span>
+            <input type="text" id="hist-timecolor" placeholder="_red, _green, dll">
+        </div>
+        <div style="margin-top: 5px;">
+            <span style="font-size: 0.7rem; font-weight:bold; color:gray; margin-left:5px;">Edit Status (N9/N3/N6 dsb)</span>
+            <input type="text" id="hist-custom-stats" placeholder="Health [_ps90%][_hide], ENTP [_purple]">
+        </div>
+        <div style="margin-top: 5px;">
+            <span style="font-size: 0.7rem; font-weight:bold; color:gray; margin-left:5px;">Deskripsi / Catatan</span>
+            <textarea id="hist-note-edit"></textarea>
+        </div>
+        <div style="margin-top: 5px;">
+            <span style="font-size: 0.7rem; font-weight:bold; color:gray; margin-left:5px;">Teman (Tag)</span>
+            <input type="text" id="hist-friends" placeholder="Friends [k_Kanji][_color] atau literal di &quot;...&quot;">
+        </div>
+    </div>
+
+    <!-- AREA TAB INFORMASI -->
+    <div id="modal-tab-informasi" style="display:none;">
+        <div>
+            <span style="font-size: 0.7rem; font-weight:bold; color:gray; margin-left:5px;">Geotag</span>
+            <input type="text" id="hist-geotag" placeholder="-0.636,106.331">
+        </div>
+        <div style="margin-top: 10px;">
+            <span style="font-size: 0.7rem; font-weight:bold; color:gray; margin-left:5px;">Dialogue</span>
+            <textarea id="hist-dialogue" placeholder="@~Bapak Budi~@: Dialogue text [_(1700 ms)]" style="min-height: 100px;"></textarea>
+            <div style="font-size: 0.65rem; color: gray; margin-top: 4px; line-height: 1.3;">
+                Gunakan format <code style="color:var(--accent-yellow)">[_(durasi)]</code> atau <code style="color:var(--accent-yellow)">[_durasi]</code> langsung di dalam dialog untuk mengatur durasi (contoh: <code style="color:rgba(255,255,255,0.7)">@~Jamal~@: Halo [_(1700 ms)]</code>).
+            </div>
+        </div>
+    </div>
+
+    <!-- AREA TAB LAMPIRAN / FILE -->
+    <div id="modal-tab-file" style="display:none; padding: 30px 10px; text-align: center;">
+        <span style="font-size: 1rem; font-weight: bold; color: var(--text); opacity: 0.8; display: block; margin-bottom: 5px;">LAMPIRAN</span>
+        <span style="font-size: 0.8rem; color: gray; letter-spacing: 1px;">Segera Hadir</span>
+    </div>
+    
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
+        <button onclick="applyHistoryEdit()" class="btn-half" style="background:var(--n3); color:#000; width:100%">SAVE</button>
+        <button onclick="upHistory()" class="btn-half" style="background:var(--btn-bg); color:var(--text); width:100%">UP</button>
+        <button onclick="togglePriority()" id="btn-prt" class="btn-half" style="background:var(--accent-yellow); color:#000; width:100%">PRT</button>
+        <button onclick="confirmDel('history')" class="btn-half" style="background:var(--accent-red); color:white; width:100%">DELETE</button>
+    </div>
+</div></div>
+
+<div id="modal-sort" class="modal" onclick="closeModal(this)"><div class="modal-content modal-content-small" onclick="event.stopPropagation()">
+    <h4 style="margin:0 0 15px 0">Urutkan Catatan</h4>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+        <button onclick="applySort('custom')" class="btn-half" style="background:rgba(255,255,255,0.1); border:1px solid var(--accent-yellow); color:var(--text);">★ Berdasarkan Kustom (Favorit)</button>
+        <button onclick="applySort('newest')" class="btn-half" style="background:var(--btn-bg); color:var(--text)">Berdasarkan Tanggal (Terbaru)</button>
+        <button onclick="applySort('oldest')" class="btn-half" style="background:var(--btn-bg); color:var(--text)">Berdasarkan Tanggal (Terlama)</button>
+        <button onclick="applySort('az')" class="btn-half" style="background:var(--btn-bg); color:var(--text)">Berdasarkan Nama (A-Z)</button>
+        <button onclick="applySort('za')" class="btn-half" style="background:var(--btn-bg); color:var(--text)">Berdasarkan Nama (Z-A)</button>
+        <button onclick="applySort('longest')" class="btn-half" style="background:var(--btn-bg); color:var(--text)">Kepadatan Teks (Terpanjang)</button>
+        <button onclick="applySort('shortest')" class="btn-half" style="background:var(--btn-bg); color:var(--text)">Kepadatan Teks (Tersingkat)</button>
+    </div>
+</div></div>
+
+<div id="modal-nature" class="modal" onclick="closeModal(this)"><div class="modal-content" onclick="event.stopPropagation()">
+    <h4 style="margin:0 0 10px 0">Update Stat</h4>
+    <input type="number" id="nature-in" placeholder="Kosongkan untuk reset" oninput="liveUpdateNature()">
+</div></div>
+
+<!-- Modal Daftar Sebutan dengan layout horizontal dipisahkan bulatan tengah • -->
+<div id="modal-people-list" class="modal" onclick="closeModal(this)"><div class="modal-content" style="max-width:350px;" onclick="event.stopPropagation()">
+    <h4 style="margin:0 0 12px 0; font-size:1rem;">Daftar Sebutan</h4>
+    <div id="modal-people-flow-container" style="line-height:1.8; max-height:280px; overflow-y:auto; text-align:left; font-size:0.9rem; padding: 10px 5px; background:var(--bg); border:1px solid var(--border); border-radius:8px;">
+        <!-- Sebutan ter-render dinamis dipisah oleh titik • -->
+    </div>
+    <button onclick="closeModal(document.getElementById('modal-people-list'))" class="btn-half" style="background:var(--text); color:var(--bg); width:100%; margin-top:15px; font-weight:bold;">TUTUP</button>
+</div></div>
+
+<!-- Modal Dialog Manajemen Edit/Hapus Individual Sebutan dari Modal Daftar -->
+<div id="modal-edit-person" class="modal" onclick="closeModal(this)"><div class="modal-content modal-content-small" onclick="event.stopPropagation()">
+    <h4 style="margin:0 0 10px 0; font-size:0.95rem;">Kelola Sebutan</h4>
+    <input type="text" id="modal-person-name-input">
+    <div style="display:flex; gap:8px; margin-top:12px;">
+        <button onclick="saveModalPersonEdit()" class="btn-half" style="background:var(--n3); color:#000;">SAVE</button>
+        <button onclick="deleteModalPerson()" class="btn-half" style="background:var(--accent-red); color:white;">HAPUS</button>
+    </div>
+</div></div>
+
+<div id="modal-confirm" class="modal" onclick="closeModal(this)"><div class="modal-content modal-content-small" onclick="event.stopPropagation()">
+    <p style="margin-top:0;">Hapus data ini?</p>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+        <button id="confirm-yes" class="btn-half" style="background:var(--accent-red); color:white">YA</button>
+        <button onclick="closeModal(document.getElementById('modal-confirm'))" class="btn-half" style="background:var(--btn-bg); color:var(--text)">TIDAK</button>
+    </div>
+</div></div>
+
+<script>
+    let missions = []; let history = []; let stats = {N9:'', N3:'', N6:''};
+    let peopleList = [];
+    let editingId = null; let curNature = 'N9'; let isPinned = false;
+    let editingPersonIndex = null;
+    
+    let currentSort = 'newest';
+    let filterPinnedOnly = false;
+    let currentDisplayHistory = [];
+
+    // --- Helper Mentions Parser ---
+    function highlightMentions(text) {
+        if (!text) return "";
+        return text.replace(/@~([^~]+)~@/g, '<span class="mention-tag">@~$1~@</span>');
+    }
+
+    // --- Core UI Logic & Fix Height Logic ---
+    function autoResize(el) { 
+        // Mengubah tinggi secara manual dengan memperhitungkan padding agar tidak memicu scroll berlebih
+        el.style.height = 'auto'; 
+        let nextHeight = el.scrollHeight;
+        if(nextHeight < 80) nextHeight = 80;
+        el.style.height = nextHeight + 'px'; 
+    }
+
+    function switchTab(idx) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab'+idx).classList.add('active');
+        document.querySelectorAll('.nav-btn')[idx-1].classList.add('active');
+        
+        // Atur kembali header agar normal saat navigasi dipencet
+        document.querySelector('header').style.display = 'flex';
+    }
+
+    function toggleTheme() {
+        const isDark = document.body.classList.toggle('light-mode');
+        document.getElementById('theme-btn').innerText = isDark ? "朝" : "夜";
+        const svgIcon = document.querySelector('.search-btn svg');
+        if(svgIcon) svgIcon.setAttribute('stroke', isDark ? '#111' : '#ffffff');
+        renderMissions(); renderHistory(); 
+    }
+
+    function getAdjustedColor(c) {
+        if (!c) return 'var(--text)';
+        const isLight = document.body.classList.contains('light-mode');
+        c = c.toLowerCase().replace('_', '');
+        if(isLight && c === 'yellow') return '#b8860b'; 
+        if(!isLight) { 
+            if(c === 'blue') return 'var(--accent-blue)'; 
+            if(c === 'purple') return '#c39bd3'; 
+            if(c === 'red') return '#ff6b6b'; 
+            if(c === 'green') return '#58d68d'; // Warna hijau lebih terang di dark mode
+        }
+        if(c === 'red') return 'var(--accent-red)';
+        if(c === 'green') return 'var(--accent-green)';
+        if(c === 'yellow') return 'var(--accent-yellow)';
+        return c === 'white' ? 'var(--text)' : c;
+    }
+
+    let headerFocused = false;
+    function handleHeaderFocus() { headerFocused = true; updateHeaderUI(); }
+    function handleHeaderBlur() { headerFocused = false; setTimeout(updateHeaderUI, 100); }
+    function updateHeaderUI() {
+        const titleEl = document.getElementById('header-title');
+        const descEl = document.getElementById('header-desc');
+        const hasDesc = descEl.value.trim() !== '';
+        if (headerFocused || hasDesc) { descEl.style.display = 'block'; titleEl.style.fontSize = '0.9rem'; titleEl.style.paddingBottom = '0px'; } 
+        else { descEl.style.display = 'none'; titleEl.style.fontSize = '1.1rem'; titleEl.style.paddingBottom = '5px'; }
+    }
+
+    function togglePin() {
+        isPinned = !isPinned;
+        const btn = document.getElementById('pin-btn');
+        btn.classList.toggle('active', isPinned); btn.innerText = isPinned ? "UNPIN" : "PIN";
+        if (isPinned && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(e=>console.log(e));
+        else if (!isPinned && document.exitFullscreen) if(document.fullscreenElement) document.exitFullscreen();
+        document.getElementById('header-title').disabled = isPinned; document.getElementById('header-desc').disabled = isPinned;
+    }
+
+    // --- Tombol Pencarian ---
+    function toggleSearch() {
+        const bar = document.getElementById('search-bar');
+        bar.style.display = bar.style.display === 'none' ? 'block' : 'none';
+        if(bar.style.display === 'block') bar.focus();
+        renderHistory();
+    }
+
+    // --- Kontrol Filter Pin (Hanya mempengaruhi urutan catatan ketika tombol dinyalakan) ---
+    function togglePinFilter() {
+        filterPinnedOnly = !filterPinnedOnly;
+        document.getElementById('btn-pin-filter').style.opacity = filterPinnedOnly ? '1' : '0.5';
+        document.getElementById('btn-pin-filter').style.color = filterPinnedOnly ? 'var(--accent-yellow)' : 'var(--text)';
+        renderHistory();
+    }
+
+    function openSortModal() { openModal('modal-sort'); }
+    function applySort(sortType) {
+        currentSort = sortType;
+        closeModal(document.getElementById('modal-sort'));
+        renderHistory();
+    }
+
+    // --- Modal Dragging Hitbox Fix ---
+    let isDraggingModal = false; let startY = 0; let currentTranslateY = 0; let activeModalContent = null;
+    document.querySelectorAll('.modal-content').forEach(mc => {
+        mc.addEventListener('touchstart', (e) => {
+            const noDragTags = ['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT', 'OPTION', 'A', 'SPAN'];
+            if(noDragTags.includes(e.target.tagName)) return;
+            isDraggingModal = true; startY = e.touches[0].clientY - currentTranslateY;
+            activeModalContent = mc; mc.style.transition = 'none'; 
+        }, {passive: true});
+        mc.addEventListener('touchmove', (e) => {
+            if(!isDraggingModal || !activeModalContent) return;
+            let y = e.touches[0].clientY - startY;
+            currentTranslateY = y; activeModalContent.style.transform = `translateY(${y}px)`;
+        }, {passive: true});
+        mc.addEventListener('touchend', () => {
+            isDraggingModal = false;
+            if(activeModalContent) { activeModalContent.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; activeModalContent = null; }
+        });
+    });
+
+    function openModal(id) { 
+        let mc = document.querySelector(`#${id} .modal-content`);
+        if(mc) { currentTranslateY = 0; mc.style.transform = `translateY(0px)`; }
+        document.getElementById(id).classList.add('show'); 
+    }
+    function closeModal(el) { el.classList.remove('show'); }
+    
+    // --- Kontrol Tab Modal ---
+    function switchModalTab(tabName) {
+        const tabs = ['utama', 'informasi', 'file'];
+        tabs.forEach(t => {
+            const content = document.getElementById(`modal-tab-${t}`);
+            const btn = document.getElementById(`tab-btn-${t}`);
+            if (t === tabName) {
+                content.style.display = 'block';
+                btn.classList.add('active');
+            } else {
+                content.style.display = 'none';
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    function showToast(msg) {
+        let toast = document.createElement('div'); toast.className = 'toast-msg'; toast.innerText = msg;
+        document.body.appendChild(toast); setTimeout(() => toast.remove(), 2500);
+    }
+
+    // --- Halaman Khusus Kelola Orang (Navigasi Tetap Aktif) ---
+    function openManagePeople() {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-manage-people').classList.add('active');
+        
+        // Sembunyikan header utama agar tidak menumpuk
+        document.querySelector('header').style.display = 'none';
+        
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.nav-btn')[2].classList.add('active'); // Tetap tandai SYSTEM
+    }
+
+    function closeManagePeople() {
+        switchTab(3);
+    }
+
+    function parseAndAddPeople() {
+        const val = document.getElementById('people-bulk-input').value;
+        if (!val.trim()) return;
+        
+        const regex = /@~([^~]+)~@/g;
+        let match;
+        let count = 0;
+        
+        while ((match = regex.exec(val)) !== null) {
+            const name = match[1].trim();
+            if (name && !peopleList.includes(name)) {
+                peopleList.push(name);
+                count++;
+            }
+        }
+        
+        if (count === 0) {
+            const lines = val.split('\n').map(l => l.trim()).filter(l => l);
+            lines.forEach(l => {
+                let clean = l.replace(/[@~]/g, '').trim();
+                if (clean && !peopleList.includes(clean)) {
+                    peopleList.push(clean);
+                    count++;
+                }
+            });
+        }
+        
+        document.getElementById('people-bulk-input').value = "";
+        document.getElementById('people-bulk-input').style.height = "80px";
+        showToast(`Berhasil menambahkan ${count} sebutan!`);
+    }
+
+    // --- Render Daftar Sebutan di Dalam Modal ---
+    function openPeopleListModal() {
+        const flowContainer = document.getElementById('modal-people-flow-container');
+        flowContainer.innerHTML = "";
+        
+        if (peopleList.length === 0) {
+            flowContainer.innerHTML = `<div style="text-align: center; color: gray; font-size: 0.8rem; padding: 15px;">Belum ada sebutan terdaftar.</div>`;
+            openModal('modal-people-list');
+            return;
+        }
+
+        peopleList.forEach((p, idx) => {
+            const tagSpan = document.createElement('span');
+            tagSpan.className = "mention-tag";
+            tagSpan.style.cursor = "pointer";
+            tagSpan.innerText = `@~${p}~@`;
+            tagSpan.onclick = () => openEditPersonModal(idx);
+            
+            flowContainer.appendChild(tagSpan);
+            
+            // Tambahkan pemisah titik tengah putih jika bukan elemen terakhir
+            if (idx < peopleList.length - 1) {
+                const separator = document.createElement('span');
+                separator.style.color = "var(--text)";
+                separator.style.margin = "0 8px";
+                separator.innerHTML = "•";
+                flowContainer.appendChild(separator);
+            }
+        });
+        
+        openModal('modal-people-list');
+    }
+
+    function openEditPersonModal(idx) {
+        editingPersonIndex = idx;
+        document.getElementById('modal-person-name-input').value = peopleList[idx];
+        openModal('modal-edit-person');
+    }
+
+    function saveModalPersonEdit() {
+        const newName = document.getElementById('modal-person-name-input').value.trim();
+        if (newName) {
+            peopleList[editingPersonIndex] = newName;
+            closeModal(document.getElementById('modal-edit-person'));
+            openPeopleListModal(); // refresh list modal parent
+            showToast("Nama sebutan berhasil diperbarui!");
+        }
+    }
+
+    // --- Hapus Modal Person ---
+    function deleteModalPerson() {
+        peopleList.splice(editingPersonIndex, 1);
+        closeModal(document.getElementById('modal-edit-person'));
+        openPeopleListModal(); // refresh list modal parent
+        showToast("Sebutan berhasil dihapus!");
+    }
+
+    // --- Mission ---
+    function renderMissions() {
+        const list = document.getElementById('mission-list'); list.innerHTML = '';
+        missions.forEach((m, i) => {
+            const div = document.createElement('div');
+            div.className = `mission-item ${m.done ? 'done' : ''}`;
+            div.style.borderLeftColor = getAdjustedColor(m.color);
+            let displayDesc = m.desc || ""; if (displayDesc.length > 100) displayDesc = displayDesc.substring(0, 100) + "...";
+            displayDesc = highlightMentions(displayDesc);
+            let extHtml = "";
+            if (m.ext && m.ext.trim() !== "") {
+                const extArr = m.ext.split(',').map(e => e.trim()).filter(e => e);
+                const formattedExt = extArr.map(e => {
+                    const cMatch = e.match(/\[_([^\]]+)\]/);
+                    const color = cMatch ? getAdjustedColor(cMatch[1]) : 'var(--text)';
+                    const text = e.replace(/\[_[^\]]+\]/g, '').trim();
+                    return `<span class="ext-data" style="color:${color}">${text}</span>`;
+                }).join(' <span style="color:gray; opacity:0.5; margin:0 4px;">|</span> ');
+                extHtml = ` <span style="color:gray; opacity:0.5; margin:0 4px;">|</span> ` + formattedExt;
+            }
+            div.innerHTML = `<div class="check-box" onclick="toggleDone(${i}, event)"></div>
+                <div class="mission-text-area" style="flex:1">
+                    <div style="font-weight:bold; font-size:0.95rem;">${highlightMentions(m.text)}</div>
+                    ${displayDesc ? `<div style="font-size:0.8rem; opacity:0.7; margin-top:5px; line-height:1.3; white-space:pre-wrap;">${displayDesc}</div>` : ''}
+                    ${(m.date || extHtml) ? `<div style="display:flex; align-items:center; opacity:0.7; margin-top:6px;">${m.date ? `<small style="font-size:0.6rem;">${m.date}</small>` : ''}${extHtml}</div>` : ''}
+                </div>`;
+            div.onclick = () => { openMissionEdit(i); };
+            list.appendChild(div);
+        });
+    }
+
+    function addMission() { missions.push({text: 'New Task', date: '', desc: '', ext: '', color: 'white', done: false}); renderMissions(); }
+    
+    function importMissionsFromNote() {
+        const noteVal = document.getElementById('mission-note').value;
+        if (!noteVal.trim()) return;
+        
+        const blocks = noteVal.split(/##MISSION##/i);
+        let importedCount = 0;
+        
+        blocks.forEach(block => {
+            if (!block.trim()) return;
+            
+            const titleMatch = block.match(/\/Missiontitle\/=\s*(.*)/i);
+            const dateMatch = block.match(/\/Missiondate\/=\s*(.*)/i);
+            const extraMatch = block.match(/\/Missionextra\/=\s*(.*)/i);
+            const detailsMatch = block.match(/\/Missiondetails\/=\s*(.*)/i);
+            const colorMatch = block.match(/\/Missioncolor\/=\s*(.*)/i);
+            
+            const title = titleMatch ? titleMatch[1].trim() : "New Task";
+            const date = dateMatch ? dateMatch[1].trim() : "";
+            const extra = extraMatch ? extraMatch[1].trim() : "";
+            const details = detailsMatch ? detailsMatch[1].trim() : "";
+            const color = colorMatch ? colorMatch[1].trim().replace('_', '') : "white";
+            
+            if (title) {
+                missions.push({
+                    text: title,
+                    date: date,
+                    desc: details,
+                    ext: extra,
+                    color: color,
+                    done: false
+                });
+                importedCount++;
+            }
+        });
+        
+        if (importedCount > 0) {
+            showToast(`Berhasil mengimpor ${importedCount} misi!`);
+            document.getElementById('mission-note').value = "";
+            document.getElementById('mission-note').style.height = "80px";
+            renderMissions();
+            updateMissionActionButton();
+        } else {
+            showToast("Format misi tidak dikenali. Pastikan terdapat parameter /Missiontitle/=");
+        }
+    }
+
+    // --- Fungsi Ekspor Misi dan Logika Toggle Tombol Aksi ---
+    function exportMissionsToNote() {
+        if (missions.length === 0) {
+            showToast("Tidak ada misi untuk diexpor!");
+            return;
+        }
+        let exportText = "";
+        missions.forEach((m, idx) => {
+            let block = "";
+            if (m.text) block += `/Missiontitle/=${m.text}\n`;
+            if (m.date) block += `/Missiondate/=${m.date}\n`;
+            if (m.ext) block += `/Missionextra/=${m.ext}\n`;
+            if (m.desc) block += `/Missiondetails/=${m.desc}\n`;
+            if (m.color) block += `/Missioncolor/=${m.color}\n`;
+            
+            exportText += block.trim();
+            if (idx < missions.length - 1) {
+                exportText += "\n\n##MISSION##\n\n";
+            }
+        });
+        
+        const note = document.getElementById('mission-note');
+        note.value = exportText;
+        autoResize(note);
+        updateMissionActionButton();
+        showToast("Semua misi berhasil diexpor!");
+    }
+
+    function handleMissionAction() {
+        const note = document.getElementById('mission-note');
+        if (note.value.trim() !== "") {
+            importMissionsFromNote();
+        } else {
+            exportMissionsToNote();
+        }
+    }
+
+    function updateMissionActionButton() {
+        const note = document.getElementById('mission-note');
+        const btn = document.getElementById('btn-mission-action');
+        if (!btn) return;
+        if (note.value.trim() !== "") {
+            btn.innerText = "IMPOR MISI";
+            btn.style.background = "var(--n3)";
+            btn.style.color = "#000";
+        } else {
+            btn.innerText = "EXPOR MISI";
+            btn.style.background = "var(--accent-grey)";
+            btn.style.color = "#fff";
+        }
+    }
+
+    function toggleDone(i, e) { e.stopPropagation(); missions[i].done = !missions[i].done; renderMissions(); }
+    
+    function openMissionEdit(i) {
+        editingId = i; 
+        document.getElementById('edit-mission-text').value = missions[i].text;
+        document.getElementById('edit-mission-date').value = missions[i].date || '';
+        document.getElementById('edit-mission-desc').value = missions[i].desc || '';
+        document.getElementById('edit-mission-ext').value = missions[i].ext || '';
+        document.getElementById('edit-mission-color').value = missions[i].color;
+        const ta = document.getElementById('edit-mission-desc');
+        openModal('modal-mission'); setTimeout(() => autoResize(ta), 10);
+    }
+    
+    function applyMissionEdit() {
+        missions[editingId].text = document.getElementById('edit-mission-text').value;
+        missions[editingId].date = document.getElementById('edit-mission-date').value;
+        missions[editingId].desc = document.getElementById('edit-mission-desc').value;
+        missions[editingId].ext = document.getElementById('edit-mission-ext').value;
+        missions[editingId].color = document.getElementById('edit-mission-color').value;
+        closeModal(document.getElementById('modal-mission')); renderMissions();
+    }
+
+    // --- Fungsi UP di MISSION (Sama seperti UP di LOGS) ---
+    function upMission() {
+        if(editingId === null) return;
+        const m = missions[editingId];
+        let upText = "";
+        
+        if(m.text) upText += `/Missiontitle/=${m.text}\n`;
+        if(m.date) upText += `/Missiondate/=${m.date}\n`;
+        if(m.ext) upText += `/Missionextra/=${m.ext}\n`;
+        if(m.desc) upText += `/Missiondetails/=${m.desc}\n`;
+        if(m.color) upText += `/Missioncolor/=${m.color}\n`;
+        
+        const missionNote = document.getElementById('mission-note');
+        missionNote.value = upText.trim();
+        autoResize(missionNote);
+        updateMissionActionButton();
+        closeModal(document.getElementById('modal-mission'));
+        showToast("Misi siap untuk draf!");
+        missionNote.focus();
+    }
+
+    // --- Nature System ---
+    function updateNatureUI(n) {
+        let val = stats[n];
+        let circle = document.getElementById('prog-'+n); let textEl = document.getElementById('text-'+n);
+        if (val === '') { circle.style.strokeDashoffset = 188.4; textEl.innerText = n; textEl.style.color = 'var(--text)'; } 
+        else { circle.style.strokeDashoffset = 188.4 - (188.4 * val / 100); textEl.innerText = val + '%'; textEl.style.color = `var(--${n.toLowerCase()})`; }
+    }
+    function openNature(n) { curNature = n; document.getElementById('nature-in').value = stats[n]; openModal('modal-nature'); }
+    function liveUpdateNature() {
+        let rawVal = document.getElementById('nature-in').value;
+        stats[curNature] = rawVal === '' ? '' : Math.min(100, Math.max(0, parseInt(rawVal))); updateNatureUI(curNature);
+    }
+
+    // --- Smart Parser (Tanda Petik) ---
+    function processQuotedInput(str) {
+        if (!str) return [];
+        let result = []; let current = ""; let inQuotes = false;
+        for (let i = 0; i < str.length; i++) {
+            if (str[i] === '"') {
+                if (inQuotes && str[i+1] === '"') { current += '"'; i++; } // "" = "
+                else { inQuotes = !inQuotes; }
+            } else if (str[i] === ',' && !inQuotes) {
+                result.push(applyEscape(current.trim())); current = "";
+            } else {
+                current += str[i];
+            }
+        }
+        result.push(applyEscape(current.trim()));
+        return result.filter(s => s !== '');
+    }
+
+    function applyEscape(val) {
+        let res = ""; let inQ = false;
+        for(let i=0; i<val.length; i++){
+            if(val[i] === '"'){
+                if(inQ && val[i+1] === '"'){ res += '"'; i++; }
+                else { inQ = !inQ; }
+            } else {
+                if(inQ) {
+                    if(val[i] === '[') res += '&#91;'; else if(val[i] === ']') res += '&#93;'; else res += val[i];
+                } else { res += val[i]; }
+            }
+        }
+        return res;
+    }
+
+    function extractSlashTags(text) {
+        const tags = ['/title/=', '/master/=', '/status/=', '/description/=', '/tag/=', '/geotag/=', '/dialogue/=', '/duration/=', '/timecolor/='];
+        let results = {}; let parts = text.split(/(?=\/(?:title|master|status|description|tag|geotag|dialogue|duration|timecolor)\/=)/i); let descText = "";
+        parts.forEach(p => {
+            let matched = false;
+            for(let t of tags) {
+                if(p.toLowerCase().startsWith(t)) { results[t] = p.substring(t.length).trim(); matched = true; break; }
+            }
+            if(!matched) descText += p; 
+        });
+        if(results['/description/=']) descText = results['/description/='] + (descText.trim() ? "\n" + descText : "");
+        return {
+            title: results['/title/='], 
+            master: results['/master/='], 
+            status: results['/status/='],
+            tag: results['/tag/='], 
+            geotag: results['/geotag/='],
+            dialogue: results['/dialogue/='],
+            duration: results['/duration/='],
+            timecolor: results['/timecolor/='],
+            desc: descText.trim()
+        };
+    }
+
+    // --- History / Log System ---
+    function saveToHistory() {
+        const d = new Date(); const p = n => n.toString().padStart(2, '0');
+        const dateStr = `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}, ${p(d.getHours())}.${p(d.getMinutes())}.${p(d.getSeconds())}`;
+        let parsed = extractSlashTags(document.getElementById('main-note').value);
+        const n9Val = stats.N9 === '' ? '?' : stats.N9; const n3Val = stats.N3 === '' ? '?' : stats.N3; const n6Val = stats.N6 === '' ? '?' : stats.N6;
+        const defaultStatsStr = `Health [_ps${n9Val}%][_hide], Social [_ps${n3Val}%][_hide], Brain [_ps${n6Val}%][_hide]`;
+        
+        let initialDlg = parsed.dialogue || "";
+        if (parsed.duration && !initialDlg.includes('[_')) {
+            initialDlg += ` [_${parsed.duration}]`;
+        }
+
+        const entry = {
+            id: Date.now(), 
+            name: parsed.title || `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`,
+            date: dateStr,
+            customStats: parsed.status !== undefined ? processQuotedInput(parsed.status).join(', ') : defaultStatsStr,
+            note: parsed.desc,
+            friends: parsed.tag ? processQuotedInput(parsed.tag) : [], 
+            masterKanji: parsed.master || "", 
+            isPrioritized: false, 
+            isPinned: false,
+            geotag: parsed.geotag || "",
+            dialogue: initialDlg,
+            dialogueDuration: parsed.duration || "",
+            timecolor: parsed.timecolor || ""
+        };
+        history.unshift(entry); renderHistory();
+        const mainTa = document.getElementById('main-note'); mainTa.value = ""; mainTa.style.height = '80px'; 
+        // stats = {N9:'', N3:'', N6:''}; ['N9','N3','N6'].forEach(updateNatureUI); // DIHAPUS: State Stats N9/N3/N6 dipertahankan dan tidak direset otomatis.
+    }
+
+    function formatTimeLabel(dateRaw) {
+        if (dateRaw && /^\d{8}_\d{4,6}$/.test(dateRaw)) {
+            const y = dateRaw.substring(0, 4);
+            const m = dateRaw.substring(4, 6);
+            const d = dateRaw.substring(6, 8);
+            const hh = dateRaw.substring(9, 11);
+            const mm = dateRaw.substring(11, 13);
+            const ss = dateRaw.length > 13 ? '.' + dateRaw.substring(13, 15) : '';
+            return `${y}/${m}/${d}, ${hh}.${mm}${ss}`;
+        }
+        return dateRaw;
+    }
+
+    function renderHistory() {
+        const list = document.getElementById('history-list'); list.innerHTML = '';
+        const searchQ = document.getElementById('search-bar').value;
+        currentDisplayHistory = [...history];
+
+        if (currentSort !== 'custom') {
+            currentDisplayHistory.sort((a, b) => {
+                // Pin hanya mempengaruhi urutan jika tombol filter '留' dinyalakan
+                if (filterPinnedOnly) {
+                    if (a.isPinned && !b.isPinned) return -1;
+                    if (!a.isPinned && b.isPinned) return 1;
+                }
+                if (currentSort === 'newest') return b.id - a.id;
+                if (currentSort === 'oldest') return a.id - b.id;
+                if (currentSort === 'az') return a.name.localeCompare(b.name);
+                if (currentSort === 'za') return b.name.localeCompare(a.name);
+                if (currentSort === 'longest') return (b.note||"").length - (a.note||"").length;
+                if (currentSort === 'shortest') return (a.note||"").length - (b.note||"").length;
+                return 0;
+            });
+        }
+
+        currentDisplayHistory.forEach((h, idx) => h.globalIndex = idx + 1);
+        
+        if(searchQ.trim()) {
+            const queryTerms = processQuotedInput(searchQ);
+            currentDisplayHistory = currentDisplayHistory.filter(h => {
+                let searchableStats = (h.customStats || "").replace(/\[_ps([^\]]+)\]/g, ": $1").replace(/\[_hide\]/g, '');
+                const combinedTxt = `${h.name} ${h.note || ''} ${h.masterKanji || ''} ${searchableStats} ${(h.friends||[]).join(' ')} ${h.dialogue || ''} ${h.geotag || ''}`.toLowerCase();
+                
+                return queryTerms.every(term => {
+                    let cleanTerm = term.toLowerCase().trim();
+                    let pageMatch = cleanTerm.match(/^catatan\s+(\d+)x+\/?$/i);
+                    if(pageMatch) {
+                        let base = pageMatch[1];
+                        let xCount = pageMatch[0].match(/x/gi).length;
+                        let min = parseInt(base + "0".repeat(xCount));
+                        let max = parseInt(base + "9".repeat(xCount));
+                        return h.globalIndex >= min && h.globalIndex <= max;
+                    }
+                    return combinedTxt.includes(cleanTerm);
+                });
+            });
+        }
+
+        currentDisplayHistory.forEach((h) => {
+            const div = document.createElement('div');
+            
+            let dragHtml = '';
+            if (currentSort === 'custom' && !searchQ.trim()) {
+                div.className = 'history-card draggable';
+                dragHtml = `<div class="drag-handle">⋮⋮<br>⋮⋮<br>⋮⋮<br>⋮⋮</div>`;
+            } else {
+                div.className = 'history-card';
+            }
+            
+            div.dataset.id = h.id;
+            if (h.isPinned) div.innerHTML += `<div class="pin-indicator">留</div>`;
+            
+            const mTags = (h.masterKanji || "").split(',').map(k => k.trim()).filter(k => k && !k.includes('[_hide]')).map(k => {
+                const cMatch = k.match(/\[_([^\]]+)\]/);
+                let colorName = cMatch ? cMatch[1] : 'var(--border)';
+                let colorHex = colorName !== 'var(--border)' ? getAdjustedColor(colorName) : colorName;
+                const text = k.replace(/\[_[^\]]+\]/g, '').trim();
+                return `<span class="master-tag" style="border-color:${colorHex}; color:${colorName === 'var(--border)' ? 'var(--text)' : colorHex}">${highlightMentions(text)}</span>`;
+            }).join('');
+            
+            const fTags = (h.friends || []).filter(f => f && !f.includes('[_hide]')).map(f => {
+                const kMatch = f.match(/\[k_([^\]]+)\]/); const cMatch = f.match(/\[_([^\]]+)\]/);
+                const kanji = kMatch ? kMatch[1] : "友"; let colorName = cMatch ? cMatch[1] : 'white';
+                let colorHex = getAdjustedColor(colorName);
+                const cleanName = f.replace(/\[k_[^\]]+\]|\[_[^\]]+\]/g, '').trim();
+                return `<div class="friend-tag" style="border-color:${colorHex}"><span class="friend-kanji" style="color:${colorHex}">${kanji}</span>${highlightMentions(cleanName)}</div>`;
+            }).join('');
+            
+            let displayNote = h.note || "";
+            if (!h.isPrioritized && displayNote.length > 100) displayNote = displayNote.substring(0, 100) + "...";
+    
+            if (displayNote) {
+                displayNote = displayNote.split('\n').map(line => {
+                    const trimmed = line.trim();
+                    
+                    if (trimmed.startsWith('>>')) {
+                        return `<blockquote style="
+                            margin: 10px auto; 
+                            margin-bottom: -2px; 
+                            max-width: 85%; 
+                            padding: 10px 14px; 
+                            background: rgba(255, 255, 255, 0.05); 
+                            border: 1px solid var(--accent-grey); 
+                            border-radius: 6px; 
+                            opacity: 0.85; 
+                            font-style: italic;
+                        ">${trimmed.substring(2).trim()}</blockquote>`;
+                    }
+                    
+                    if (trimmed.startsWith('>')) {
+                        return `<blockquote style="margin: 0px 0; margin-bottom: -12px; padding-left: 8px; border-left: 3px solid var(--accent-grey); opacity: 0.75; font-style: italic;">${trimmed.substring(1).trim()}</blockquote>`;
+                    }
+
+                    return line;
+                }).join('\n');
+            }
+
+            let statsHtml = '';
+            if (h.customStats) {
+                const statsArr = h.customStats.split(',').map(s => s.trim()).filter(s => s && !s.includes('[_hide]'));
+                statsHtml = statsArr.map(s => {
+                    let valMatch = s.match(/\[_ps([^\]]+)\]/); let colorMatch = s.match(/\[_([a-zA-Z]+)\]/);
+                    let val = valMatch ? valMatch[1] : null; let colorName = (colorMatch && colorMatch[1] !== 'ps' && colorMatch[1] !== 'hide') ? colorMatch[1] : null;
+                    let label = s.replace(/\[_[^\]]+\]/g, '').trim();
+                    if(val === '?%') val = '--'; 
+                    let colorHex = colorName ? getAdjustedColor(colorName) : 'inherit';
+                    let displayTxt = val !== null ? `${label}: ${val}` : label;
+                    return `<span style="color:${colorHex}">${highlightMentions(displayTxt)}</span>`;
+                }).join('<br>');
+            }
+
+            let timeColorStyle = h.timecolor ? `color:${getAdjustedColor(h.timecolor)}; font-weight:bold;` : '';
+            let readableDate = formatTimeLabel(h.date);
+
+            // --- Penanganan Dialog Terpadu Tanpa Tanda Petik & Batasan Karakter ---
+            let dialogueHtml = '';
+            if (h.dialogue) {
+                let cleanDialogue = h.dialogue;
+                let durationText = '';
+                
+                // Cari tag durasi [_(durasi)] atau [_durasi]
+                const durMatch = cleanDialogue.match(/\[_([^\]]+)\]/);
+                if (durMatch) {
+                    durationText = durMatch[1].replace(/^\((.*)\)$/, '$1'); // Hilangkan tanda kurung luar () jika ada
+                    cleanDialogue = cleanDialogue.replace(/\[_[^\]]+\]/g, '').trim(); // Bersihkan dari teks dialog utama
+                }
+                
+                // Batasi maksimal 250 karakter teks dialog utama kecuali mode PRT (prioritized) aktif
+                if (!h.isPrioritized && cleanDialogue.length > 250) {
+                    cleanDialogue = cleanDialogue.substring(0, 250) + '...';
+                }
+                
+                let displayDur = durationText ? ` <span style="font-size:0.7rem; opacity:0.5; font-style:italic;">${durationText}</span>` : '';
+                
+                // Render dialog terpadu tanpa tanda petik dua bawaan kiri & kanan. Spasi baris ditangani otomatis oleh white-space pre-wrap.
+                dialogueHtml = `<div class="dialogue-box" style="white-space: pre-wrap;">${highlightMentions(cleanDialogue)}${displayDur}</div>`;
+            }
+
+            let geotagHtml = '';
+            if (h.geotag) {
+                geotagHtml = `<div class="geotag-text"> 場所: ${h.geotag}</div>`;
+            }
+
+            div.innerHTML += dragHtml + `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div style="flex:1; padding-right:15px;">
+                        <strong style="font-size:1rem; display:block; letter-spacing:0.5px;">${highlightMentions(h.name)}</strong>
+                        ${mTags ? `<div class="master-kanji-row">${mTags}</div>` : ''}
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="opacity:0.3; font-size:0.6rem; letter-spacing:0.5px; ${timeColorStyle}">${readableDate}</div>
+                        ${statsHtml ? `<div style="opacity:0.5; font-size:0.6rem; line-height:1.4; margin-top:6px; font-weight:bold;">${statsHtml}</div>` : ''}
+                    </div>
+                </div>
+                ${dialogueHtml}
+                ${displayNote ? `<div style="font-size:0.85rem; opacity:0.8; margin-top: 4px; margin-bottom: 8px; white-space: pre-wrap; line-height:1.4;">${highlightMentions(displayNote)}</div>` : ''}
+                ${geotagHtml}
+                <div class="friend-list" style="margin-top: 8px;">${fTags}</div>`;
+            
+            div.onclick = (e) => { 
+                if(e.target.closest('.drag-handle')) return;
+                const realIndex = history.findIndex(x => x.id === h.id);
+                openHistoryDetail(realIndex, h.id, h.globalIndex); 
+            };
+            list.appendChild(div);
+        });
+
+        // PEMICU RENDER LA-TEX JIKA SCRIPT MATHJAX SELESAI DIMUAT
+        if (window.MathJax && window.MathJax.typeset) { 
+            window.MathJax.typeset();
+        }
+    }
+
+    // --- Touch Drag and Drop Logic ---
+    let dragData = { active: false, id: null, node: null, startY: 0 };
+    document.addEventListener('touchstart', (e) => {
+        let handle = e.target.closest('.drag-handle');
+        if(!handle) return;
+        dragData.active = true; dragData.node = handle.closest('.history-card');
+        dragData.id = parseInt(dragData.node.dataset.id);
+        dragData.node.classList.add('dragging');
+    }, {passive: true});
+
+    document.addEventListener('touchmove', (e) => {
+        if(!dragData.active) return;
+        e.preventDefault(); 
+        let y = e.touches[0].clientY;
+        let target = document.elementFromPoint(e.touches[0].clientX, y);
+        let targetCard = target ? target.closest('.history-card:not(.dragging)') : null;
+        
+        if (targetCard) {
+            let list = document.getElementById('history-list');
+            let rect = targetCard.getBoundingClientRect();
+            if (y < rect.top + rect.height / 2) list.insertBefore(dragData.node, targetCard);
+            else list.insertBefore(dragData.node, targetCard.nextSibling);
+        }
+    }, {passive: false});
+
+    document.addEventListener('touchend', (e) => {
+        if(!dragData.active) return;
+        dragData.active = false; dragData.node.classList.remove('dragging');
+        
+        if (currentSort === 'custom') {
+            let newOrderIds = Array.from(document.querySelectorAll('#history-list .history-card')).map(c => parseInt(c.dataset.id));
+            let visibleIdsSet = new Set(newOrderIds);
+            let newHistory = [];
+            let visibleIndex = 0;
+            
+            history.forEach(item => {
+                if (visibleIdsSet.has(item.id)) {
+                    let nextId = newOrderIds[visibleIndex++];
+                    let nextItem = history.find(h => h.id === nextId);
+                    if (nextItem) newHistory.push(nextItem);
+                } else {
+                    newHistory.push(item);
+                }
+            });
+            
+            history = newHistory; 
+            renderHistory();
+        }
+    });
+
+    // --- Mouse Drag For Desktop ---
+    document.addEventListener('mousedown', (e) => {
+        let handle = e.target.closest('.drag-handle');
+        if(!handle) return;
+        dragData.active = true; dragData.node = handle.closest('.history-card');
+        dragData.node.classList.add('dragging');
+    });
+    document.addEventListener('mousemove', (e) => {
+        if(!dragData.active) return;
+        let y = e.clientY;
+        let target = document.elementFromPoint(e.clientX, y);
+        let targetCard = target ? target.closest('.history-card:not(.dragging)') : null;
+        if (targetCard) {
+            let list = document.getElementById('history-list');
+            let rect = targetCard.getBoundingClientRect();
+            if (y < rect.top + rect.height / 2) list.insertBefore(dragData.node, targetCard);
+            else list.insertBefore(dragData.node, targetCard.nextSibling);
+        }
+    });
+    
+    document.addEventListener('mouseup', (e) => {
+        if(!dragData.active) return;
+        dragData.active = false; dragData.node.classList.remove('dragging');
+        
+        if (currentSort === 'custom') {
+            let newOrderIds = Array.from(document.querySelectorAll('#history-list .history-card')).map(c => parseInt(c.dataset.id));
+            let visibleIdsSet = new Set(newOrderIds);
+            let newHistory = [];
+            let visibleIndex = 0;
+            
+            history.forEach(item => {
+                if (visibleIdsSet.has(item.id)) {
+                    let nextId = newOrderIds[visibleIndex++];
+                    let nextItem = history.find(h => h.id === nextId);
+                    if (nextItem) newHistory.push(nextItem);
+                } else {
+                    newHistory.push(item);
+                }
+            });
+            
+            history = newHistory; 
+            renderHistory();
+        }
+    });
+
+    function openHistoryDetail(realIndex, id, globalIndex) {
+        editingId = realIndex; const h = history[realIndex];
+        switchModalTab('utama'); // Selalu tampilkan tab 'Utama' terlebih dahulu secara default
+        
+        document.getElementById('hist-pagination').innerText = `Catatan ${globalIndex}/${history.length}`;
+        document.getElementById('hist-name-edit').value = h.name || "";
+        document.getElementById('hist-master-kanji').value = h.masterKanji || "";
+        
+        if(!h.customStats && h.stats) h.customStats = `Health [_ps${h.stats.N9 || '?'}%][_hide], Social [_ps${h.stats.N3 || '?'}%][_hide], Brain [_ps${h.stats.N6 || '?'}%][_hide]`;
+        document.getElementById('hist-custom-stats').value = h.customStats || "";
+        document.getElementById('hist-note-edit').value = h.note || "";
+        document.getElementById('hist-geotag').value = h.geotag || "";
+        
+        // Gabungkan dialog dan durasi ke dalam satu bidang teks terpadu
+        let fullDialogue = h.dialogue || "";
+        if (h.dialogueDuration && !fullDialogue.includes('[_')) {
+            fullDialogue += ` [_${h.dialogueDuration}]`;
+        }
+        document.getElementById('hist-dialogue').value = fullDialogue;
+        document.getElementById('hist-timecolor').value = h.timecolor || "";
+        
+        let friendsText = (h.friends || []).join(', ');
+        friendsText = friendsText.replace(/&#91;/g, '[').replace(/&#93;/g, ']');
+        document.getElementById('hist-friends').value = friendsText;
+        
+        const prtBtn = document.getElementById('btn-prt');
+        if (h.isPrioritized) { prtBtn.style.background = 'var(--accent-grey)'; prtBtn.style.color = 'white'; } 
+        else { prtBtn.style.background = 'var(--accent-yellow)'; prtBtn.style.color = '#000'; }
+
+        const pinBtn = document.getElementById('btn-note-pin');
+        if (h.isPinned) pinBtn.style.color = 'var(--accent-yellow)';
+        else pinBtn.style.color = 'var(--text)';
+        openModal('modal-history');
+    }
+    
+    function togglePriority() {
+        if (editingId === null) return;
+        history[editingId].isPrioritized = !history[editingId].isPrioritized;
+        const prtBtn = document.getElementById('btn-prt');
+        if (history[editingId].isPrioritized) { prtBtn.style.background = 'var(--accent-grey)'; prtBtn.style.color = 'white'; } 
+        else { prtBtn.style.background = 'var(--accent-yellow)'; prtBtn.style.color = '#000'; }
+        renderHistory();
+    }
+    
+    function toggleNotePin() {
+        if (editingId === null) return;
+        history[editingId].isPinned = !history[editingId].isPinned;
+        const pinBtn = document.getElementById('btn-note-pin');
+        if (history[editingId].isPinned) pinBtn.style.color = 'var(--accent-yellow)';
+        else pinBtn.style.color = 'var(--text)';
+        renderHistory();
+    }
+
+    function applyHistoryEdit() {
+        const h = history[editingId];
+        h.name = document.getElementById('hist-name-edit').value;
+        h.masterKanji = document.getElementById('hist-master-kanji').value;
+        h.customStats = processQuotedInput(document.getElementById('hist-custom-stats').value).join(', ');
+        h.note = document.getElementById('hist-note-edit').value;
+        h.friends = processQuotedInput(document.getElementById('hist-friends').value);
+        h.geotag = document.getElementById('hist-geotag').value.trim();
+        
+        const dialogueInput = document.getElementById('hist-dialogue').value.trim();
+        h.dialogue = dialogueInput;
+        
+        // Ekstrak otomatis durasi jika terdapat tag di dalam input dialog baru
+        const durMatch = dialogueInput.match(/\[_([^\]]+)\]/);
+        if (durMatch) {
+            h.dialogueDuration = durMatch[1].replace(/^\((.*)\)$/, '$1');
+        } else {
+            h.dialogueDuration = "";
+        }
+        
+        h.timecolor = document.getElementById('hist-timecolor').value.trim();
+        closeModal(document.getElementById('modal-history')); renderHistory();
+    }
+    
+    function upHistory() {
+        if(editingId === null) return;
+        const h = history[editingId];
+        let upText = "";
+        if(h.name) upText += `/title/=${h.name} `;
+        if(h.masterKanji) upText += `/master/=${h.masterKanji} `;
+        if(h.geotag) upText += `/geotag/=${h.geotag} `;
+        
+        let fullDialogue = h.dialogue || "";
+        if(h.dialogueDuration && !fullDialogue.includes('[_')) {
+            fullDialogue += ` [_${h.dialogueDuration}]`;
+        }
+        if(fullDialogue) upText += `/dialogue/=${fullDialogue} `;
+        if(h.timecolor) upText += `/timecolor/=${h.timecolor} `;
+        
+        let safeStats = (h.customStats || "").replace(/&#91;/g, '[').replace(/&#93;/g, ']');
+        if(safeStats) upText += `/status/=${safeStats} `;
+        
+        let safeFriends = (h.friends && h.friends.length > 0) ? h.friends.join(', ').replace(/&#91;/g, '[').replace(/&#93;/g, ']') : "";
+        if(safeFriends) upText += `/tag/=${safeFriends} `;
+        
+        if(h.note) upText += `\n/description/=${h.note}`;
+        
+        const mainInput = document.getElementById('main-note');
+        mainInput.value = upText.trim(); autoResize(mainInput);
+        closeModal(document.getElementById('modal-history'));
+        showToast("Catatan siap untuk diedit!"); mainInput.focus();
+    }
+
+    function confirmDel(type) {
+        openModal('modal-confirm');
+        document.getElementById('confirm-yes').onclick = () => {
+            if(type === 'mission') missions.splice(editingId, 1);
+            else history.splice(editingId, 1);
+            document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+            renderMissions(); renderHistory();
+        };
+    }
+
+    // --- JSON Logic ---
+    function updateMemUI() {
+        const used = parseFloat(document.getElementById('mem-used').value) || 0;
+        const total = parseFloat(document.getElementById('mem-total').value) || 1;
+        const pct = (used/total)*100;
+        const fill = document.getElementById('mem-fill');
+        if(fill) {
+            fill.style.width = Math.min(100, pct) + "%";
+            if(pct > 96) fill.style.background = 'var(--accent-red)';
+            else if(pct > 86) fill.style.background = 'var(--accent-yellow)';
+            else fill.style.background = 'var(--accent-green)';
+        }
+    }
+
+    function exportAll() {
+        let fName = document.getElementById('json-filename').value.trim() || "gersawabook_ultra";
+        const d = new Date();
+        const yyyymmdd = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+        const mmdd = String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+        const hhmm = String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0');
+        fName = fName.replace(/yyyymmdd/gi, yyyymmdd).replace(/mmdd/gi, mmdd).replace(/hhmm/gi, hhmm);
+        if(!fName.endsWith('.json')) fName += '.json';
+
+        const data = { 
+            missions, history, stats, theme: document.body.classList.contains('light-mode'), 
+            title: document.getElementById('header-title').value, desc: document.getElementById('header-desc').value,
+            jsonName: document.getElementById('json-filename').value,
+            peopleList,
+            memory: { used: document.getElementById('mem-used').value, total: document.getElementById('mem-total').value }
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fName; a.click();
+    }
+
+    function importAll(e) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const parsedJSON = JSON.parse(ev.target.result);
+                
+                let isFlatKeyValueFormat = false;
+                const keys = Object.keys(parsedJSON);
+                if (keys.length > 0 && !parsedJSON.history && !parsedJSON.missions) {
+                    isFlatKeyValueFormat = keys.every(k => /^\d{8}_\d{4,6}$/.test(k) || !isNaN(Date.parse(k.replace(/_/g, ' '))));
+                }
+
+                if (isFlatKeyValueFormat) {
+                    history = [];
+                    missions = [];
+                    stats = {N9:'', N3:'', N6:''};
+                    peopleList = [];
+                    
+                    keys.forEach(k => {
+                        const item = parsedJSON[k];
+                        let friendsParsed = [];
+                        if (item.tag) {
+                            friendsParsed = processQuotedInput(item.tag);
+                        }
+                        
+                        history.push({
+                            id: isNaN(Date.parse(k.replace(/_/g, ' '))) ? Date.now() - Math.floor(Math.random() * 1000000) : Date.parse(k.replace(/_/g, ' ')),
+                            name: item.Title || "Untitled Log",
+                            date: k, 
+                            geotag: item.Geotag || "",
+                            dialogue: item.Dialogue || "",
+                            dialogueDuration: item.DialogueDuration || "",
+                            timecolor: item.timecolor || "",
+                            friends: friendsParsed,
+                            masterKanji: item.master || "",
+                            customStats: `Health [_ps?%][_hide], Social [_ps?%][_hide], Brain [_ps?%][_hide]`,
+                            note: item.desc || "",
+                            isPrioritized: false,
+                            isPinned: false
+                        });
+                    });
+                    
+                    showToast(`Berhasil mengimpor ${history.length} log format key-value!`);
+                } else {
+                    missions = parsedJSON.missions || [];
+                    history = parsedJSON.history || [];
+                    stats = parsedJSON.stats || {N9:'', N3:'', N6:''};
+                    peopleList = parsedJSON.peopleList || [];
+                    
+                    history.forEach(h => {
+                        if(!h.customStats && h.stats) h.customStats = `Health [_ps${h.stats.N9 || '?'}%][_hide], Social [_ps${h.stats.N3 || '?'}%][_hide], Brain [_ps${h.stats.N6 || '?'}%][_hide]`;
+                    });
+
+                    document.getElementById('header-title').value = parsedJSON.title || "Logical Note";
+                    document.getElementById('header-desc').value = parsedJSON.desc || "";
+                    if(parsedJSON.jsonName) document.getElementById('json-filename').value = parsedJSON.jsonName;
+                    
+                    if(parsedJSON.memory) {
+                        document.getElementById('mem-used').value = parsedJSON.memory.used || "1";
+                        document.getElementById('mem-total').value = parsedJSON.memory.total || "10";
+                    }
+
+                    if(parsedJSON.theme) { 
+                        document.body.classList.add('light-mode'); 
+                        document.getElementById('theme-btn').innerText = "朝"; 
+                    } else { 
+                        document.body.classList.remove('light-mode'); 
+                        document.getElementById('theme-btn').innerText = "夜"; 
+                    }
+                    
+                    showToast("Berhasil memuat berkas JSON standar!");
+                }
+
+                updateHeaderUI();
+                const svgIcon = document.querySelector('.search-btn svg');
+                const isLight = document.body.classList.contains('light-mode');
+                if(svgIcon) svgIcon.setAttribute('stroke', isLight ? '#111' : '#ffffff');
+
+                renderMissions(); 
+                renderHistory(); 
+                updateMemUI();
+                ['N9','N3','N6'].forEach(updateNatureUI);
+                updateMissionActionButton();
+
+            } catch (err) {
+                console.error(err);
+                showToast("Error: File JSON tidak valid.");
+            }
+        };
+        reader.readAsText(e.target.files[0]);
+    }
+
+    updateHeaderUI();
+    renderMissions(); renderHistory(); updateMemUI();
+    ['N9','N3','N6'].forEach(updateNatureUI); 
+    updateMissionActionButton();
+</script>
+</body>
+</html>

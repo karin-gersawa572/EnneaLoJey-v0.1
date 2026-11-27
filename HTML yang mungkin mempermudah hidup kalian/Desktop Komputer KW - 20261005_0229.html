@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OS Vault Gateway - Multitasking Desktop Manager</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-wallpaper: #0f172a;
+            --taskbar-bg: rgba(15, 23, 42, 0.85);
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --window-bg: #1e293b;
+            --border-color: rgba(255, 255, 255, 0.12);
+            --text-main: #f8fafc;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --accent: #8b5cf6;
+        }
+
+        [data-theme="light"] {
+            --bg-wallpaper: #f1f5f9;
+            --taskbar-bg: rgba(255, 255, 255, 0.85);
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --window-bg: #ffffff;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --text-main: #0f172a;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --accent: #7c3aed;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-wallpaper);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Ambient gradient wallpaper background */
+        .wallpaper-gradient {
+            background: radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.25) 0%, transparent 40%),
+                        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.25) 0%, transparent 40%),
+                        radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.15) 0%, transparent 60%);
+        }
+
+        .glass {
+            background: var(--taskbar-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+        }
+
+        .window-glass {
+            background: var(--window-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Resizable splitter bar */
+        .splitter-handle {
+            background: var(--border-color);
+            transition: background 0.2s;
+            touch-action: none;
+        }
+
+        .splitter-handle:hover, .splitter-handle:active {
+            background: var(--primary);
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.7);
+        }
+
+        .touch-action-none {
+            touch-action: none;
+        }
+
+        /* Desktop View mode wrapper helper */
+        .desktop-iframe-scale {
+            transition: transform 0.1s ease-out;
+        }
+    </style>
+</head>
+<body class="wallpaper-gradient flex flex-col h-screen w-screen overflow-hidden text-slate-100 select-none">
+
+    <!-- Top OS Taskbar -->
+    <header class="glass h-12 px-3 flex items-center justify-between z-40 relative flex-shrink-0">
+        <div class="flex items-center gap-2">
+            <!-- Start / Vault Menu Toggle Button -->
+            <button onclick="toggleStartMenu()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-600/90 hover:bg-blue-600 text-white font-medium text-xs sm:text-sm shadow-md active:scale-95 transition-all">
+                <span class="text-base">❖</span>
+                <span class="hidden sm:inline font-semibold">Gateway Vault</span>
+            </button>
+
+            <!-- Layout Mode Switcher -->
+            <div class="flex items-center bg-slate-800/60 p-0.5 rounded-lg border border-white/10 text-xs">
+                <button id="modeBtnFloating" onclick="switchMultitaskMode('floating')" class="px-2.5 py-1 rounded-md transition-all font-medium bg-blue-600 text-white">
+                    🪟 Window
+                </button>
+                <button id="modeBtnSplit" onclick="switchMultitaskMode('split')" class="px-2.5 py-1 rounded-md transition-all font-medium text-slate-300 hover:text-white">
+                    📊 Split Ratio
+                </button>
+            </div>
+        </div>
+
+        <!-- Taskbar Window Quick Tabs -->
+        <div id="taskbarTabs" class="flex-1 flex items-center gap-1.5 px-3 overflow-x-auto no-scrollbar max-w-xl">
+            <!-- Tabs generated via JS -->
+        </div>
+
+        <!-- System Controls -->
+        <div class="flex items-center gap-2 text-xs">
+            <button onclick="openModal('vaultManagerModal')" class="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-800/80 border border-white/10 hover:bg-slate-700">
+                📁 Manage HTMLs
+            </button>
+            <button onclick="toggleTheme()" class="p-1.5 rounded-lg bg-slate-800/80 border border-white/10 hover:bg-slate-700" title="Ubah Tema">
+                🌓
+            </button>
+            <button onclick="toggleFullScreen()" class="p-1.5 rounded-lg bg-slate-800/80 border border-white/10 hover:bg-slate-700" title="Layar Penuh">
+                ⛶
+            </button>
+            <div id="clockDisplay" class="font-mono text-xs text-slate-300 px-2 py-1 bg-slate-900/50 rounded border border-white/5">
+                00:00
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Desktop Container -->
+    <main id="desktopArea" class="flex-1 relative overflow-hidden w-full h-full">
+        
+        <!-- FLOATING WINDOWS WORKSPACE (MODE: FLOATING) -->
+        <div id="floatingWorkspace" class="absolute inset-0 w-full h-full overflow-hidden">
+            <!-- Dynamic floating windows will be mounted here -->
+        </div>
+
+        <!-- SPLIT RATIO MULTITASKING WORKSPACE (MODE: SPLIT) -->
+        <div id="splitWorkspace" class="hidden absolute inset-0 w-full h-full flex flex-col sm:flex-row bg-slate-950/40 p-2 gap-2">
+            
+            <!-- Pane 1 -->
+            <div id="pane1" class="relative flex-1 bg-slate-900/80 rounded-xl border border-white/10 overflow-hidden flex flex-col">
+                <div class="h-8 bg-slate-800/90 px-3 flex items-center justify-between text-xs border-b border-white/10 flex-shrink-0">
+                    <span id="pane1Title" class="font-medium truncate text-blue-400">Pane 1: Pilih File</span>
+                    <div class="flex items-center gap-1.5">
+                        <button id="pane1DesktopBtn" onclick="togglePaneDesktopMode(1)" class="p-1 rounded bg-slate-700/80 hover:bg-slate-600 text-slate-300 transition-all flex items-center gap-1 text-[10px]" title="Situs Desktop">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                <line x1="8" y1="21" x2="16" y2="21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                            </svg>
+                            <span class="hidden md:inline">Desktop</span>
+                        </button>
+                        <button onclick="openPaneSelector(1)" class="px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-[10px]">Ganti App 🔄</button>
+                    </div>
+                </div>
+                <div id="pane1Content" class="flex-1 relative w-full h-full overflow-hidden">
+                    <div class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-slate-400">
+                        <span class="text-3xl mb-2">📁</span>
+                        <p class="text-xs">Klik "Ganti App" untuk memilih HTML</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Resizer Bar -->
+            <div id="splitResizer" class="splitter-handle w-full sm:w-2 h-2 sm:h-full cursor-row-resize sm:cursor-col-resize rounded-full flex items-center justify-center flex-shrink-0 z-10 my-0.5 sm:my-0">
+                <div class="w-6 sm:w-1 h-1 sm:h-6 bg-slate-400/50 rounded-full"></div>
+            </div>
+
+            <!-- Pane 2 -->
+            <div id="pane2" class="relative flex-1 bg-slate-900/80 rounded-xl border border-white/10 overflow-hidden flex flex-col">
+                <div class="h-8 bg-slate-800/90 px-3 flex items-center justify-between text-xs border-b border-white/10 flex-shrink-0">
+                    <span id="pane2Title" class="font-medium truncate text-purple-400">Pane 2: Pilih File</span>
+                    <div class="flex items-center gap-1.5">
+                        <button id="pane2DesktopBtn" onclick="togglePaneDesktopMode(2)" class="p-1 rounded bg-slate-700/80 hover:bg-slate-600 text-slate-300 transition-all flex items-center gap-1 text-[10px]" title="Situs Desktop">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                <line x1="8" y1="21" x2="16" y2="21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                            </svg>
+                            <span class="hidden md:inline">Desktop</span>
+                        </button>
+                        <button onclick="openPaneSelector(2)" class="px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-[10px]">Ganti App 🔄</button>
+                    </div>
+                </div>
+                <div id="pane2Content" class="flex-1 relative w-full h-full overflow-hidden">
+                    <div class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-slate-400">
+                        <span class="text-3xl mb-2">🌐</span>
+                        <p class="text-xs">Klik "Ganti App" untuk memilih HTML</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Start Menu Drawer -->
+    <div id="startMenu" class="hidden fixed top-14 left-3 w-80 max-w-[90vw] glass rounded-2xl p-4 shadow-2xl z-50 flex flex-col gap-3 border border-white/15 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div class="flex items-center justify-between pb-2 border-b border-white/10">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white text-sm">
+                    OS
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-white">Gateway Manager</h3>
+                    <p class="text-[10px] text-slate-400">Vivo V23e & Desktop Edition</p>
+                </div>
+            </div>
+            <button onclick="toggleStartMenu()" class="text-slate-400 hover:text-white p-1">✕</button>
+        </div>
+
+        <!-- Quick Search -->
+        <input type="text" id="startSearch" oninput="filterStartApps()" placeholder="Cari file HTML..." class="w-full bg-slate-950/60 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-400 outline-none focus:border-blue-500">
+
+        <!-- App Grid List -->
+        <div class="text-xs font-semibold text-slate-400 mt-1">APLIKASI TERSIMPAN:</div>
+        <div id="startAppList" class="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+            <!-- Dynamic Apps Rendered via JS -->
+        </div>
+
+        <div class="pt-2 border-t border-white/10 flex items-center justify-between">
+            <button onclick="openModal('vaultManagerModal'); toggleStartMenu();" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5">
+                <span>📁</span> Kelola Storage Vault
+            </button>
+        </div>
+    </div>
+
+    <!-- Vault Manager Modal (Kompatibel penuh dengan ToolVault) -->
+    <div id="vaultManagerModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+        <div class="window-glass rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-white/15">
+            <!-- Modal Header -->
+            <div class="px-4 py-3 bg-slate-800/90 border-b border-white/10 flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">📁</span>
+                    <div>
+                        <h2 class="font-bold text-sm text-white">ToolVault - Organizer Database HTML</h2>
+                        <p class="text-[11px] text-slate-400" id="modalStatsBadge">0 File HTML Tersimpan</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('vaultManagerModal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+
+            <!-- Toolbar Actions -->
+            <div class="p-3 bg-slate-900/60 border-b border-white/10 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <input type="file" id="htmlFileInput" accept=".html,.htm" multiple style="display:none;" onchange="handleHtmlImport(event)">
+                    <button onclick="document.getElementById('htmlFileInput').click()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1">
+                        📥 Impor HTML Baru
+                    </button>
+                    <button onclick="exportDatabase()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-medium border border-white/10 flex items-center gap-1">
+                        💾 Simpan Master JSON
+                    </button>
+                    <button onclick="importDatabasePrompt()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-medium border border-white/10 flex items-center gap-1">
+                        📂 Buka JSON Database
+                    </button>
+                </div>
+                <input type="text" id="vaultSearchInput" oninput="renderVaultList()" placeholder="Cari dalam vault..." class="bg-slate-950 border border-white/10 rounded-lg px-3 py-1 text-xs text-white outline-none focus:border-blue-500 w-48">
+            </div>
+
+            <!-- File List Grid -->
+            <div id="vaultListGrid" class="flex-1 p-4 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <!-- Cards rendered via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Metadata Modal (Title & Compressed Logo) -->
+    <div id="editMetadataModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+        <div class="window-glass rounded-xl w-full max-w-md p-4 space-y-4 border border-white/15">
+            <h3 class="font-bold text-sm text-white border-b border-white/10 pb-2">Pengaturan Metadata HTML</h3>
+            
+            <div class="space-y-1">
+                <label class="text-xs text-slate-300 font-medium">Judul Tool / Aplikasi</label>
+                <input type="text" id="editTitleInput" class="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-blue-500">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs text-slate-300 font-medium">Logo Khusus (Dikompres Ke 256x256 JPG 25%)</label>
+                <div class="flex items-center gap-3 p-2 border border-white/10 rounded-lg bg-slate-900/50">
+                    <img id="editLogoPreview" class="w-12 h-12 rounded-lg object-cover bg-slate-800 border border-white/10" src="" alt="Preview">
+                    <div class="flex-1">
+                        <input type="file" id="logoFileInput" accept="image/*" style="display:none;" onchange="processLogoImage(event)">
+                        <button onclick="document.getElementById('logoFileInput').click()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-xs text-white rounded border border-white/10">Ganti Gambar</button>
+                        <p class="text-[10px] text-slate-400 mt-1">Otomatis kompres agar JSON ringan.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-white/10">
+                <button onclick="closeModal('editMetadataModal')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-medium">Batal</button>
+                <button onclick="saveEditMetadata()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Selector Modal for Split Mode -->
+    <div id="paneSelectorModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+        <div class="window-glass rounded-xl w-full max-w-sm p-4 space-y-3 border border-white/15">
+            <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                <h3 id="paneSelectorTitle" class="font-bold text-xs text-white">Pilih Aplikasi untuk Split Pane</h3>
+                <button onclick="closeModal('paneSelectorModal')" class="text-slate-400 hover:text-white text-xs">✕</button>
+            </div>
+            <div id="paneSelectorList" class="max-h-64 overflow-y-auto space-y-1.5">
+                <!-- Generated via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Compressor Canvas -->
+    <canvas id="compressorCanvas" width="256" height="256" style="display:none;"></canvas>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <script>
+        // MASTER DATABASE STATE (Compatible with ToolVault schema)
+        let db = [];
+        let openWindows = []; // Active floating windows
+        let activeWindowId = null;
+        let topZIndex = 10;
+        let multitaskMode = 'floating'; // 'floating' or 'split'
+        let targetPaneForSelection = null;
+        let paneApps = { 1: null, 2: null }; // App IDs for split mode
+        let paneDesktopMode = { 1: false, 2: false }; // Track desktop mode status for split panes
+        let splitRatio = 50; // Percentage split ratio
+        let tempProcessedBase64Logo = null;
+        let activeEditId = null;
+
+        // Sample Built-in Apps when database is freshly loaded
+        const defaultSampleApps = [
+            {
+                id: 'sys_vault',
+                filename: 'system_vault.html',
+                title: '📁 File Vault Manager',
+                size: '15 KB',
+                updatedAt: new Date().toLocaleDateString('id-ID'),
+                logo: null,
+                isSystem: true,
+                html: `<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"><\/script></head><body class="bg-slate-900 text-slate-100 p-6 font-sans"><div class="max-w-md mx-auto text-center space-y-4"><div class="text-5xl">📁</div><h1 class="text-xl font-bold text-blue-400">Gateway Storage Vault</h1><p class="text-xs text-slate-400">Selamat datang di Gateway OS! Kamu dapat mengimpor file HTML kamu ke dalam JSON vault ini dan menjalankannya secara multitasking visual.</p><button onclick="window.parent.openModal('vaultManagerModal')" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-lg">Buka Kelola Vault Baru</button></div></body></html>`
+            },
+            {
+                id: 'sys_notes',
+                filename: 'quick_notes.html',
+                title: '📝 Catatan Cepat',
+                size: '4 KB',
+                updatedAt: new Date().toLocaleDateString('id-ID'),
+                logo: null,
+                html: `<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"><\/script></head><body class="bg-slate-950 text-slate-100 p-4 font-sans h-screen flex flex-col"><div class="text-xs font-bold mb-2 text-purple-400 flex justify-between"><span>📝 QUICK NOTES</span><span text-[10px] text-slate-500>Auto-saved</span></div><textarea id="noteText" placeholder="Tulis catatan cepat multitasking kamu di sini..." class="flex-1 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 outline-none resize-none focus:border-purple-500" oninput="localStorage.setItem('sys_note_data', this.value)"></textarea><script>document.getElementById('noteText').value = localStorage.getItem('sys_note_data') || '';<\/script></body></html>`
+            },
+            {
+                id: 'sys_calc',
+                filename: 'calculator.html',
+                title: '🧮 Kalkulator Sederhana',
+                size: '3 KB',
+                updatedAt: new Date().toLocaleDateString('id-ID'),
+                logo: null,
+                html: `<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"><\/script></head><body class="bg-slate-900 text-white p-4 font-sans flex flex-col items-center justify-center h-screen"><div class="w-full max-w-xs bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3"><input id="calcDisplay" readonly value="0" class="w-full bg-slate-900 text-right px-3 py-2 text-xl font-mono rounded-lg border border-slate-800 text-green-400"><div class="grid grid-cols-4 gap-2 text-xs font-bold"><button onclick="c('')" class="p-3 bg-red-900/50 text-red-300 rounded-lg">C</button><button onclick="a('/')" class="p-3 bg-slate-800 text-blue-400 rounded-lg">/</button><button onclick="a('*')" class="p-3 bg-slate-800 text-blue-400 rounded-lg">*</button><button onclick="a('-')" class="p-3 bg-slate-800 text-blue-400 rounded-lg">-</button><button onclick="a('7')" class="p-3 bg-slate-800 rounded-lg">7</button><button onclick="a('8')" class="p-3 bg-slate-800 rounded-lg">8</button><button onclick="a('9')" class="p-3 bg-slate-800 rounded-lg">9</button><button onclick="a('+')" class="p-3 bg-slate-800 text-blue-400 rounded-lg">+</button><button onclick="a('4')" class="p-3 bg-slate-800 rounded-lg">4</button><button onclick="a('5')" class="p-3 bg-slate-800 rounded-lg">5</button><button onclick="a('6')" class="p-3 bg-slate-800 rounded-lg">6</button><button onclick="eq()" class="p-3 bg-blue-600 rounded-lg row-span-2 text-white">=</button><button onclick="a('1')" class="p-3 bg-slate-800 rounded-lg">1</button><button onclick="a('2')" class="p-3 bg-slate-800 rounded-lg">2</button><button onclick="a('3')" class="p-3 bg-slate-800 rounded-lg">3</button><button onclick="a('0')" class="p-3 bg-slate-800 rounded-lg col-span-2">0</button><button onclick="a('.')" class="p-3 bg-slate-800 rounded-lg">.</button></div></div><script>let d=document.getElementById('calcDisplay');function a(v){if(d.value==='0')d.value='';d.value+=v;}function c(){d.value='0';}function eq(){try{d.value=eval(d.value);}catch(e){d.value='Err';}}<\/script></body></html>`
+            }
+        ];
+
+        window.onload = function() {
+            loadFromLocalStorage();
+            startClock();
+            setupSplitResizerEvents();
+            renderStartApps();
+            renderVaultList();
+            
+            // Auto open System Vault on launch
+            launchApp('sys_vault');
+
+            // Handle global window resize for active desktop view scaling
+            window.addEventListener('resize', () => {
+                openWindows.forEach(w => {
+                    if (w.isDesktopMode) updateIframeDesktopScale(`win_content_${w.winId}`, true);
+                });
+                if (paneDesktopMode[1]) updateIframeDesktopScale('pane1Content', true);
+                if (paneDesktopMode[2]) updateIframeDesktopScale('pane2Content', true);
+            });
+        };
+
+        function startClock() {
+            const updateClock = () => {
+                const now = new Date();
+                document.getElementById('clockDisplay').innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            };
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('html_vault_db');
+            if (saved) {
+                try {
+                    db = JSON.parse(saved);
+                } catch (e) {
+                    db = [...defaultSampleApps];
+                }
+            } else {
+                db = [...defaultSampleApps];
+                saveToLocalStorage();
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('html_vault_db', JSON.stringify(db));
+            renderStartApps();
+            renderVaultList();
+        }
+
+        function launchApp(appId) {
+            const app = db.find(a => a.id === appId);
+            if (!app) return;
+
+            if (multitaskMode === 'split') {
+                // If in split mode, set pane 1 or pane 2
+                if (!paneApps[1]) {
+                    setPaneApp(1, appId);
+                } else {
+                    setPaneApp(2, appId);
+                }
+                showToast(`Dimuat di Split Pane: ${app.title}`);
+                return;
+            }
+
+            // FLOATING MODE: Check if already open
+            const existingWin = openWindows.find(w => w.appId === appId);
+            if (existingWin) {
+                focusWindow(existingWin.winId);
+                if (existingWin.isMinimized) {
+                    restoreWindow(existingWin.winId);
+                }
+                return;
+            }
+
+            // Create new Floating Window
+            const winId = 'win_' + Date.now();
+            topZIndex += 1;
+
+            // Smart responsive position calculation for Vivo V23e / Mobile screens
+            const isMobile = window.innerWidth < 640;
+            const defaultWidth = isMobile ? Math.floor(window.innerWidth * 0.9) : 560;
+            const defaultHeight = isMobile ? Math.floor(window.innerHeight * 0.7) : 420;
+            const defaultX = isMobile ? 15 : Math.min(60 + (openWindows.length * 25), window.innerWidth - defaultWidth - 20);
+            const defaultY = isMobile ? 20 : Math.min(40 + (openWindows.length * 25), window.innerHeight - defaultHeight - 60);
+
+            const winObj = {
+                winId,
+                appId,
+                title: app.title,
+                logo: app.logo,
+                html: app.html,
+                x: defaultX,
+                y: defaultY,
+                width: defaultWidth,
+                height: defaultHeight,
+                isMaximized: false,
+                isMinimized: false,
+                isDesktopMode: false, // Track desktop viewport scale state
+                zIndex: topZIndex
+            };
+
+            openWindows.push(winObj);
+            renderWindowElement(winObj);
+            renderTaskbarTabs();
+            focusWindow(winId);
+        }
+
+        function renderWindowElement(win) {
+            const container = document.getElementById('floatingWorkspace');
+            const winEl = document.createElement('div');
+            winEl.id = win.winId;
+            winEl.className = 'absolute window-glass rounded-xl flex flex-col overflow-hidden transition-shadow duration-150';
+            winEl.style.width = win.width + 'px';
+            winEl.style.height = win.height + 'px';
+            winEl.style.left = win.x + 'px';
+            winEl.style.top = win.y + 'px';
+            winEl.style.zIndex = win.zIndex;
+
+            const logoHtml = win.logo 
+                ? `<img src="${win.logo}" class="w-4 h-4 rounded object-cover">` 
+                : `<span class="text-xs">🌐</span>`;
+
+            winEl.innerHTML = `
+                <!-- Window Header / Titlebar -->
+                <div class="win-header h-8 bg-slate-800/90 px-3 flex items-center justify-between border-b border-white/10 cursor-move touch-action-none flex-shrink-0 select-none">
+                    <div class="flex items-center gap-2 overflow-hidden pointer-events-none">
+                        ${logoHtml}
+                        <span class="text-xs font-semibold text-slate-200 truncate">${escapeHtml(win.title)}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <!-- Situs Desktop SVG Button -->
+                        <button id="desktop_btn_${win.winId}" onclick="toggleWindowDesktopMode('${win.winId}')" class="w-5 h-5 rounded flex items-center justify-center bg-slate-700/60 hover:bg-slate-600 text-slate-300 text-xs transition-colors" title="Situs Desktop Mode">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                <line x1="8" y1="21" x2="16" y2="21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                            </svg>
+                        </button>
+                        <button onclick="minimizeWindow('${win.winId}')" class="w-5 h-5 rounded flex items-center justify-center bg-slate-700/60 hover:bg-slate-600 text-slate-300 text-xs">─</button>
+                        <button onclick="toggleMaximizeWindow('${win.winId}')" class="w-5 h-5 rounded flex items-center justify-center bg-slate-700/60 hover:bg-slate-600 text-slate-300 text-xs">▢</button>
+                        <button onclick="closeWindow('${win.winId}')" class="w-5 h-5 rounded flex items-center justify-center bg-red-600/80 hover:bg-red-600 text-white text-xs">✕</button>
+                    </div>
+                </div>
+
+                <!-- Window Content Frame -->
+                <div id="win_content_${win.winId}" class="flex-1 relative w-full h-full bg-slate-950 overflow-hidden">
+                    <iframe class="w-full h-full border-none desktop-iframe-scale" sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-downloads allow-popups" srcdoc="${escapeAttr(win.html)}"></iframe>
+                </div>
+
+                <!-- Resizer Drag Handle (Bottom Right) -->
+                <div class="win-resizer absolute bottom-0 right-0 w-5 h-5 cursor-se-resize touch-action-none flex items-center justify-center z-20">
+                    <svg class="w-3 h-3 text-slate-500" fill="currentColor" viewBox="0 0 20 20"><path d="M14 14h2v2h-2zM10 14h2v2h-2zM14 10h2v2h-2z"/></svg>
+                </div>
+            `;
+
+            // Window Focus Event
+            winEl.addEventListener('mousedown', () => focusWindow(win.winId));
+            winEl.addEventListener('touchstart', () => focusWindow(win.winId), { passive: true });
+
+            container.appendChild(winEl);
+
+            // Attach Drag & Resize logic
+            setupWindowDrag(winEl, win);
+            setupWindowResize(winEl, win);
+        }
+
+        // Core Scaling Function for Desktop View without altering viewport tag inside imported HTMLs
+        function updateIframeDesktopScale(containerId, isDesktop) {
+            const container = typeof containerId === 'string' ? document.getElementById(containerId) : containerId;
+            if (!container) return;
+
+            const iframe = container.querySelector('iframe');
+            if (!iframe) return;
+
+            if (isDesktop) {
+                const desktopWidth = 1280; // Fixed desktop viewport resolution
+                const containerW = container.clientWidth;
+                const containerH = container.clientHeight;
+
+                if (containerW <= 0 || containerH <= 0) return;
+
+                const scale = containerW / desktopWidth;
+                const scaledHeight = containerH / scale;
+
+                iframe.style.width = `${desktopWidth}px`;
+                iframe.style.height = `${scaledHeight}px`;
+                iframe.style.transform = `scale(${scale})`;
+                iframe.style.transformOrigin = '0 0';
+                iframe.style.position = 'absolute';
+                iframe.style.top = '0';
+                iframe.style.left = '0';
+            } else {
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.transform = 'none';
+                iframe.style.position = 'static';
+            }
+        }
+
+        function toggleWindowDesktopMode(winId) {
+            const win = openWindows.find(w => w.winId === winId);
+            if (!win) return;
+
+            win.isDesktopMode = !win.isDesktopMode;
+            const btn = document.getElementById(`desktop_btn_${winId}`);
+            
+            if (win.isDesktopMode) {
+                btn.className = 'w-5 h-5 rounded flex items-center justify-center bg-blue-600 text-white text-xs shadow transition-colors';
+                showToast(`Situs Desktop: Aktif (${win.title})`);
+            } else {
+                btn.className = 'w-5 h-5 rounded flex items-center justify-center bg-slate-700/60 hover:bg-slate-600 text-slate-300 text-xs transition-colors';
+                showToast(`Situs Desktop: Nonaktif (${win.title})`);
+            }
+
+            updateIframeDesktopScale(`win_content_${winId}`, win.isDesktopMode);
+        }
+
+        function togglePaneDesktopMode(paneNum) {
+            paneDesktopMode[paneNum] = !paneDesktopMode[paneNum];
+            const isDesktop = paneDesktopMode[paneNum];
+            const btn = document.getElementById(`pane${paneNum}DesktopBtn`);
+
+            if (isDesktop) {
+                btn.className = 'p-1 rounded bg-blue-600 text-white transition-all flex items-center gap-1 text-[10px] shadow';
+                showToast(`Situs Desktop Split Pane ${paneNum}: Aktif`);
+            } else {
+                btn.className = 'p-1 rounded bg-slate-700/80 hover:bg-slate-600 text-slate-300 transition-all flex items-center gap-1 text-[10px]';
+                showToast(`Situs Desktop Split Pane ${paneNum}: Nonaktif`);
+            }
+
+            updateIframeDesktopScale(`pane${paneNum}Content`, isDesktop);
+        }
+
+        function focusWindow(winId) {
+            const win = openWindows.find(w => w.winId === winId);
+            if (!win) return;
+
+            activeWindowId = winId;
+            topZIndex += 1;
+            win.zIndex = topZIndex;
+
+            const el = document.getElementById(winId);
+            if (el) {
+                el.style.zIndex = topZIndex;
+                el.classList.add('ring-2', 'ring-blue-500/40');
+            }
+
+            // Remove ring from other windows
+            openWindows.forEach(w => {
+                if (w.winId !== winId) {
+                    const other = document.getElementById(w.winId);
+                    if (other) other.classList.remove('ring-2', 'ring-blue-500/40');
+                }
+            });
+
+            renderTaskbarTabs();
+        }
+
+        function minimizeWindow(winId) {
+            const win = openWindows.find(w => w.winId === winId);
+            if (!win) return;
+
+            win.isMinimized = true;
+            const el = document.getElementById(winId);
+            if (el) el.style.display = 'none';
+
+            renderTaskbarTabs();
+        }
+
+        function restoreWindow(winId) {
+            const win = openWindows.find(w => w.winId === winId);
+            if (!win) return;
+
+            win.isMinimized = false;
+            const el = document.getElementById(winId);
+            if (el) el.style.display = 'flex';
+
+            focusWindow(winId);
+        }
+
+        function toggleMaximizeWindow(winId) {
+            const win = openWindows.find(w => w.winId === winId);
+            if (!win) return;
+
+            const el = document.getElementById(winId);
+            if (!el) return;
+
+            if (!win.isMaximized) {
+                win.prevX = win.x;
+                win.prevY = win.y;
+                win.prevW = win.width;
+                win.prevH = win.height;
+
+                win.x = 0;
+                win.y = 0;
+                win.width = window.innerWidth;
+                win.height = window.innerHeight - 48; // Taskbar offset
+                win.isMaximized = true;
+            } else {
+                win.x = win.prevX || 20;
+                win.y = win.prevY || 20;
+                win.width = win.prevW || 400;
+                win.height = win.prevH || 300;
+                win.isMaximized = false;
+            }
+
+            el.style.left = win.x + 'px';
+            el.style.top = win.y + 'px';
+            el.style.width = win.width + 'px';
+            el.style.height = win.height + 'px';
+
+            if (win.isDesktopMode) {
+                setTimeout(() => updateIframeDesktopScale(`win_content_${winId}`, true), 50);
+            }
+        }
+
+        function closeWindow(winId) {
+            openWindows = openWindows.filter(w => w.winId !== winId);
+            const el = document.getElementById(winId);
+            if (el) el.remove();
+
+            if (activeWindowId === winId) {
+                activeWindowId = openWindows.length > 0 ? openWindows[openWindows.length - 1].winId : null;
+            }
+
+            renderTaskbarTabs();
+        }
+
+        // Window Drag Handling (Mouse & Touch)
+        function setupWindowDrag(winEl, win) {
+            const header = winEl.querySelector('.win-header');
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+
+            const onStart = (e) => {
+                if (win.isMaximized) return;
+                isDragging = true;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                startX = clientX;
+                startY = clientY;
+                initialX = win.x;
+                initialY = win.y;
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onEnd);
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('touchend', onEnd);
+            };
+
+            const onMove = (e) => {
+                if (!isDragging) return;
+                if (e.cancelable) e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+
+                win.x = Math.max(0, Math.min(window.innerWidth - 100, initialX + dx));
+                win.y = Math.max(0, Math.min(window.innerHeight - 80, initialY + dy));
+
+                winEl.style.left = win.x + 'px';
+                winEl.style.top = win.y + 'px';
+            };
+
+            const onEnd = () => {
+                isDragging = false;
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onEnd);
+                document.removeEventListener('touchmove', onMove);
+                document.removeEventListener('touchend', onEnd);
+            };
+
+            header.addEventListener('mousedown', onStart);
+            header.addEventListener('touchstart', onStart, { passive: true });
+        }
+
+        // Window Resize Handling (Mouse & Touch)
+        function setupWindowResize(winEl, win) {
+            const resizer = winEl.querySelector('.win-resizer');
+            let isResizing = false;
+            let startX, startY, startW, startH;
+
+            const onStart = (e) => {
+                e.stopPropagation();
+                if (win.isMaximized) return;
+                isResizing = true;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                startX = clientX;
+                startY = clientY;
+                startW = win.width;
+                startH = win.height;
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onEnd);
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('touchend', onEnd);
+            };
+
+            const onMove = (e) => {
+                if (!isResizing) return;
+                if (e.cancelable) e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                win.width = Math.max(220, startW + (clientX - startX));
+                win.height = Math.max(160, startH + (clientY - startY));
+
+                winEl.style.width = win.width + 'px';
+                winEl.style.height = win.height + 'px';
+
+                if (win.isDesktopMode) {
+                    updateIframeDesktopScale(`win_content_${win.winId}`, true);
+                }
+            };
+
+            const onEnd = () => {
+                isResizing = false;
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onEnd);
+                document.removeEventListener('touchmove', onMove);
+                document.removeEventListener('touchend', onEnd);
+            };
+
+            resizer.addEventListener('mousedown', onStart);
+            resizer.addEventListener('touchstart', onStart, { passive: true });
+        }
+
+        function switchMultitaskMode(mode) {
+            multitaskMode = mode;
+            const floatingWs = document.getElementById('floatingWorkspace');
+            const splitWs = document.getElementById('splitWorkspace');
+            const btnFloat = document.getElementById('modeBtnFloating');
+            const btnSplit = document.getElementById('modeBtnSplit');
+
+            if (mode === 'floating') {
+                floatingWs.classList.remove('hidden');
+                splitWs.classList.add('hidden');
+                btnFloat.className = 'px-2.5 py-1 rounded-md transition-all font-medium bg-blue-600 text-white';
+                btnSplit.className = 'px-2.5 py-1 rounded-md transition-all font-medium text-slate-300 hover:text-white';
+            } else {
+                floatingWs.classList.add('hidden');
+                splitWs.classList.remove('hidden');
+                btnSplit.className = 'px-2.5 py-1 rounded-md transition-all font-medium bg-purple-600 text-white';
+                btnFloat.className = 'px-2.5 py-1 rounded-md transition-all font-medium text-slate-300 hover:text-white';
+                
+                // Auto load apps into split panes if empty
+                if (!paneApps[1] && db.length > 0) setPaneApp(1, db[0].id);
+                if (!paneApps[2] && db.length > 1) setPaneApp(2, db[1].id);
+            }
+        }
+
+        function setupSplitResizerEvents() {
+            const resizer = document.getElementById('splitResizer');
+            const pane1 = document.getElementById('pane1');
+            const pane2 = document.getElementById('pane2');
+            let isResizing = false;
+
+            const onStart = (e) => {
+                isResizing = true;
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onEnd);
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('touchend', onEnd);
+            };
+
+            const onMove = (e) => {
+                if (!isResizing) return;
+                if (e.cancelable) e.preventDefault();
+                
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const container = document.getElementById('splitWorkspace');
+                const rect = container.getBoundingClientRect();
+
+                const isHorizontal = window.innerWidth >= 640; // sm breakpoint
+                let percent;
+
+                if (isHorizontal) {
+                    percent = ((clientX - rect.left) / rect.width) * 100;
+                } else {
+                    percent = ((clientY - rect.top) / rect.height) * 100;
+                }
+
+                // Clamp ratio between 15% and 85%
+                percent = Math.max(15, Math.min(85, percent));
+                splitRatio = percent;
+
+                if (isHorizontal) {
+                    pane1.style.flex = `0 0 ${percent}%`;
+                    pane2.style.flex = `0 0 ${100 - percent}%`;
+                } else {
+                    pane1.style.flex = `0 0 ${percent}%`;
+                    pane2.style.flex = `0 0 ${100 - percent}%`;
+                }
+
+                if (paneDesktopMode[1]) updateIframeDesktopScale('pane1Content', true);
+                if (paneDesktopMode[2]) updateIframeDesktopScale('pane2Content', true);
+            };
+
+            const onEnd = () => {
+                isResizing = false;
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onEnd);
+                document.removeEventListener('touchmove', onMove);
+                document.removeEventListener('touchend', onEnd);
+            };
+
+            resizer.addEventListener('mousedown', onStart);
+            resizer.addEventListener('touchstart', onStart, { passive: true });
+        }
+
+        function openPaneSelector(paneNum) {
+            targetPaneForSelection = paneNum;
+            document.getElementById('paneSelectorTitle').innerText = `Pilih Aplikasi untuk Split Pane ${paneNum}`;
+            const list = document.getElementById('paneSelectorList');
+            list.innerHTML = '';
+
+            db.forEach(app => {
+                const item = document.createElement('div');
+                item.className = 'p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/10 flex items-center justify-between cursor-pointer';
+                item.onclick = () => {
+                    setPaneApp(paneNum, app.id);
+                    closeModal('paneSelectorModal');
+                };
+
+                const logoHtml = app.logo 
+                    ? `<img src="${app.logo}" class="w-5 h-5 rounded object-cover">`
+                    : `<span class="text-xs">🌐</span>`;
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        ${logoHtml}
+                        <span class="text-xs text-white font-medium truncate max-w-[180px]">${escapeHtml(app.title)}</span>
+                    </div>
+                    <span class="text-[10px] text-blue-400 font-semibold">Pilih ➔</span>
+                `;
+                list.appendChild(item);
+            });
+
+            openModal('paneSelectorModal');
+        }
+
+        function setPaneApp(paneNum, appId) {
+            const app = db.find(a => a.id === appId);
+            if (!app) return;
+
+            paneApps[paneNum] = appId;
+            document.getElementById(`pane${paneNum}Title`).innerText = `Pane ${paneNum}: ${app.title}`;
+            const contentEl = document.getElementById(`pane${paneNum}Content`);
+            
+            contentEl.innerHTML = `
+                <iframe class="w-full h-full border-none desktop-iframe-scale" sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-downloads allow-popups" srcdoc="${escapeAttr(app.html)}"></iframe>
+            `;
+
+            if (paneDesktopMode[paneNum]) {
+                setTimeout(() => updateIframeDesktopScale(`pane${paneNum}Content`, true), 50);
+            }
+        }
+
+        function renderTaskbarTabs() {
+            const container = document.getElementById('taskbarTabs');
+            container.innerHTML = '';
+
+            openWindows.forEach(win => {
+                const isActive = win.winId === activeWindowId && !win.isMinimized;
+                const tab = document.createElement('button');
+                tab.className = `flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all flex-shrink-0 border max-w-[140px] ${
+                    isActive 
+                        ? 'bg-blue-600/90 text-white border-blue-400/50 shadow' 
+                        : 'bg-slate-800/60 text-slate-300 border-white/10 hover:bg-slate-700'
+                }`;
+
+                const logoHtml = win.logo 
+                    ? `<img src="${win.logo}" class="w-3.5 h-3.5 rounded object-cover">` 
+                    : `<span class="text-[10px]">🌐</span>`;
+
+                tab.innerHTML = `
+                    ${logoHtml}
+                    <span class="truncate font-medium">${escapeHtml(win.title)}</span>
+                `;
+
+                tab.onclick = () => {
+                    if (win.isMinimized) {
+                        restoreWindow(win.winId);
+                    } else if (win.winId === activeWindowId) {
+                        minimizeWindow(win.winId);
+                    } else {
+                        focusWindow(win.winId);
+                    }
+                };
+
+                container.appendChild(tab);
+            });
+        }
+
+        function toggleStartMenu() {
+            const startMenu = document.getElementById('startMenu');
+            startMenu.classList.toggle('hidden');
+        }
+
+        function renderStartApps() {
+            const list = document.getElementById('startAppList');
+            const searchVal = (document.getElementById('startSearch')?.value || '').toLowerCase();
+            list.innerHTML = '';
+
+            const filtered = db.filter(a => a.title.toLowerCase().includes(searchVal));
+
+            filtered.forEach(app => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-white/5 flex items-center justify-between transition-all group';
+                btn.onclick = () => {
+                    launchApp(app.id);
+                    toggleStartMenu();
+                };
+
+                const logoHtml = app.logo 
+                    ? `<img src="${app.logo}" class="w-6 h-6 rounded object-cover">` 
+                    : `<div class="w-6 h-6 rounded bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs">🌐</div>`;
+
+                btn.innerHTML = `
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        ${logoHtml}
+                        <div class="overflow-hidden">
+                            <div class="font-medium text-xs text-slate-200 group-hover:text-blue-400 truncate">${escapeHtml(app.title)}</div>
+                            <div class="text-[10px] text-slate-400">${app.size}</div>
+                        </div>
+                    </div>
+                    <span class="text-xs text-slate-500 group-hover:text-white">▶</span>
+                `;
+                list.appendChild(btn);
+            });
+        }
+
+        function filterStartApps() {
+            renderStartApps();
+        }
+
+        function handleHtmlImport(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            let countAdded = 0;
+            let countOverwritten = 0;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const rawHtml = e.target.result;
+                    let filename = file.name.replace(/\.[^/.]+$/, "");
+                    
+                    const titleMatch = rawHtml.match(/<title[^>]*>(.*?)<\/title>/i);
+                    let title = titleMatch ? titleMatch[1].trim() : filename;
+
+                    const existingIndex = db.findIndex(item => item.filename === file.name || item.title === title);
+
+                    if (existingIndex !== -1) {
+                        db[existingIndex].html = rawHtml;
+                        db[existingIndex].size = formatBytes(file.size);
+                        db[existingIndex].updatedAt = new Date().toLocaleDateString('id-ID');
+                        countOverwritten++;
+                    } else {
+                        db.push({
+                            id: 'html_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                            filename: file.name,
+                            title: title,
+                            size: formatBytes(file.size),
+                            updatedAt: new Date().toLocaleDateString('id-ID'),
+                            logo: null,
+                            html: rawHtml
+                        });
+                        countAdded++;
+                    }
+
+                    saveToLocalStorage();
+                    showToast(`Diimpor: ${countAdded} baru, ${countOverwritten} di-overwrite`);
+                };
+                reader.readAsText(file);
+            });
+
+            event.target.value = '';
+        }
+
+        function processLogoImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.getElementById('compressorCanvas');
+                    const ctx = canvas.getContext('2d');
+
+                    ctx.clearRect(0, 0, 256, 256);
+
+                    // Crop center to 256x256
+                    const scale = Math.max(256 / img.width, 256 / img.height);
+                    const x = (256 - img.width * scale) / 2;
+                    const y = (256 - img.height * scale) / 2;
+
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+
+                    // Compress to JPG 25% quality
+                    tempProcessedBase64Logo = canvas.toDataURL('image/jpeg', 0.25);
+                    
+                    document.getElementById('editLogoPreview').src = tempProcessedBase64Logo;
+                    showToast('Logo berhasil di-resize 256x256 & dikompres (25% Quality)!');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderVaultList() {
+            const grid = document.getElementById('vaultListGrid');
+            if (!grid) return;
+
+            const searchVal = (document.getElementById('vaultSearchInput')?.value || '').toLowerCase();
+            grid.innerHTML = '';
+
+            const filtered = db.filter(item => 
+                item.title.toLowerCase().includes(searchVal) || 
+                item.filename.toLowerCase().includes(searchVal)
+            );
+
+            document.getElementById('modalStatsBadge').innerText = `${db.length} File HTML Tersimpan di LocalStorage`;
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900/90 border border-white/10 rounded-xl p-3 flex flex-col justify-between gap-3 hover:border-blue-500/50 transition-all';
+
+                const logoHtml = item.logo 
+                    ? `<img src="${item.logo}" class="w-10 h-10 rounded-lg object-cover bg-slate-800 border border-white/10">`
+                    : `<div class="w-10 h-10 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center text-lg font-bold">🌐</div>`;
+
+                card.innerHTML = `
+                    <div class="flex items-start gap-2.5">
+                        ${logoHtml}
+                        <div class="overflow-hidden flex-1">
+                            <h4 class="font-bold text-xs text-white truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</h4>
+                            <div class="text-[10px] text-slate-400 mt-0.5 flex gap-2">
+                                <span>💾 ${item.size}</span>
+                                <span>📅 ${item.updatedAt}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-1.5 pt-2 border-t border-white/10">
+                        <button onclick="deleteHtml('${item.id}')" class="px-2 py-1 bg-red-900/40 hover:bg-red-600 text-red-300 hover:text-white rounded text-[10px] transition-all">Hapus</button>
+                        <button onclick="openEditMetadataModal('${item.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-[10px] transition-all">⚙️ Edit</button>
+                        <button onclick="launchApp('${item.id}'); closeModal('vaultManagerModal');" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-semibold transition-all">▶ Launch</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openEditMetadataModal(id) {
+            const item = db.find(i => i.id === id);
+            if (!item) return;
+
+            activeEditId = id;
+            tempProcessedBase64Logo = item.logo;
+            
+            document.getElementById('editTitleInput').value = item.title;
+            const preview = document.getElementById('editLogoPreview');
+            if (item.logo) {
+                preview.src = item.logo;
+            } else {
+                preview.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="%231e293b"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="20">🌐</text></svg>';
+            }
+
+            openModal('editMetadataModal');
+        }
+
+        function saveEditMetadata() {
+            const item = db.find(i => i.id === activeEditId);
+            if (item) {
+                item.title = document.getElementById('editTitleInput').value.trim() || item.title;
+                item.logo = tempProcessedBase64Logo;
+                saveToLocalStorage();
+                closeModal('editMetadataModal');
+                showToast('Perubahan metadata disimpan!');
+            }
+        }
+
+        function deleteHtml(id) {
+            const item = db.find(i => i.id === id);
+            if (!item) return;
+
+            if (confirm(`Hapus "${item.title}" dari JSON database?`)) {
+                db = db.filter(i => i.id !== id);
+                saveToLocalStorage();
+                showToast('File HTML berhasil dihapus!');
+            }
+        }
+
+        function exportDatabase() {
+            if (db.length === 0) {
+                showToast('Tidak ada file untuk diekspor!');
+                return;
+            }
+            const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `html_vault_backup_${Date.now()}.json`;
+            a.click();
+            showToast('Master JSON Database berhasil diunduh!');
+        }
+
+        function importDatabasePrompt() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = event => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if (Array.isArray(imported)) {
+                            db = imported;
+                            saveToLocalStorage();
+                            showToast('Master JSON Database berhasil dimuat!');
+                        }
+                    } catch(err) {
+                        showToast('File JSON tidak valid!');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function toggleTheme() {
+            const isLight = document.body.getAttribute('data-theme') === 'light';
+            document.body.setAttribute('data-theme', isLight ? 'dark' : 'light');
+            showToast(`Mode Tampilan: ${isLight ? 'Gelap' : 'Terang'}`);
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function showToast(msg) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'bg-slate-900 text-white border border-white/20 px-3 py-2 rounded-lg text-xs font-medium shadow-xl animate-in slide-in-from-bottom-2 duration-150';
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
+        function escapeHtml(str) {
+            return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        function escapeAttr(str) {
+            return (str || '').replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>

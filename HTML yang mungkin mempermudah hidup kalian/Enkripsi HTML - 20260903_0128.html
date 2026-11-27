@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML Encryptor Tool (AES-256)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f0f2f5;
+      color: #1c1e21;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    h2 { margin-top: 0; color: #1877f2; text-align: center; }
+    p.desc { font-size: 0.95rem; color: #606770; text-align: center; margin-bottom: 20px; }
+    label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
+    textarea {
+      width: 100%;
+      height: 180px;
+      padding: 12px;
+      border: 1px solid #ccd0d5;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 13px;
+      resize: vertical;
+    }
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccd0d5;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+    button {
+      flex: 1;
+      padding: 12px;
+      background-color: #1877f2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background-color: #166fe5; }
+    button.secondary { background-color: #42b72a; }
+    button.secondary:hover { background-color: #36a420; }
+    .output-box { margin-top: 25px; display: none; }
+    .success-msg { color: #2e7d32; font-weight: bold; margin-bottom: 10px; }
+  </style>
+  <!-- CryptoJS embedded directly via CDN for online use, or standalone script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <h2>HTML Encryptor (AES-256)</h2>
+  <p class="desc">Alat untuk mengunci file HTML 100 kB Anda menjadi teks acak terenkripsi secara aman.</p>
+
+  <label for="rawHtml">1. Tempelkan Kode HTML Asli Anda di sini:</label>
+  <textarea id="rawHtml" placeholder="<html><body><h1>Rahasia</h1></body></html>"></textarea>
+
+  <label for="password">2. Buat Password Pembuka:</label>
+  <input type="password" id="password" placeholder="Masukkan password yang kuat...">
+
+  <div class="btn-group">
+    <button onclick="processEncryption()">Proses Enkripsi</button>
+  </div>
+
+  <div class="output-box" id="outputSection">
+    <p class="success-msg">✓ Enkripsi Berhasil!</p>
+
+    <label for="encryptedCipher">A. Teks Acak Hasil Enkripsi (Ciphertext):</label>
+    <textarea id="encryptedCipher" readonly></textarea>
+    <button onclick="copyCipher()" style="margin-top: 5px; padding: 8px; font-size: 13px;">Salin Teks Acak Saja</button>
+
+    <label for="fullHtmlOutput" style="margin-top: 20px;">B. File HTML Utuh Terkunci (Siap Pakai):</label>
+    <textarea id="fullHtmlOutput" readonly style="height: 220px;"></textarea>
+    <div class="btn-group">
+      <button class="secondary" onclick="copyFullHtml()">Salin Kode HTML Terkunci</button>
+      <button class="secondary" onclick="downloadHtml()" style="background-color: #8b5cf6;">Download File HTML</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function processEncryption() {
+    const rawContent = document.getElementById('rawHtml').value;
+    const password = document.getElementById('password').value;
+
+    if (!rawContent.trim()) {
+      alert("Silakan masukkan kode HTML yang ingin dienkripsi!");
+      return;
+    }
+    if (!password) {
+      alert("Silakan buat password terlebih dahulu!");
+      return;
+    }
+
+    // Encrypt raw HTML using AES-256
+    const encrypted = CryptoJS.AES.encrypt(rawContent, password).toString();
+
+    document.getElementById('encryptedCipher').value = encrypted;
+    // Template HTML mandiri dengan pemuatan ulang dokumen bersih
+    const standaloneHtml = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Halaman Terkunci</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"><\/script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+    .card { background: #1e293b; border: 1px solid #334155; padding: 30px; border-radius: 12px; max-width: 400px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; }
+    h3 { margin-top: 0; color: #38bdf8; }
+    input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #475569; border-radius: 6px; background: #0f172a; color: white; font-size: 16px; }
+    button { width: 100%; padding: 12px; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; }
+    button:hover { background: #0369a1; }
+    #error { color: #f87171; font-size: 14px; margin-top: 10px; display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="card" id="lockScreen">
+    <h3>🔒 Halaman Dilindungi</h3>
+    <p style="font-size: 14px; color: #94a3b8;">Masukkan password untuk membuka konten.</p>
+    <input type="password" id="passInput" placeholder="Password..." onkeypress="if(event.key==='Enter') unlock()">
+    <button onclick="unlock()">Buka Konten</button>
+    <p id="error">Password salah atau skrip gagal dimuat!</p>
+  </div>
+
+  <script>
+    const DATA = "${encrypted}";
+
+    function unlock() {
+      const p = document.getElementById("passInput").value;
+      const err = document.getElementById("error");
+      try {
+        if (typeof CryptoJS === "undefined") {
+          err.innerText = "Koneksi internet diperlukan untuk memuat library enkripsi!";
+          err.style.display = "block";
+          return;
+        }
+        const bytes = CryptoJS.AES.decrypt(DATA, p);
+        const originalText = bytes.toString(CryptoJS.enc.Utf8);
+
+        if (originalText && originalText.length > 0) {
+          // Ganti seluruh dokumen dengan isi HTML asli tanpa sisa style halaman login
+          document.open();
+          document.write(originalText);
+          document.close();
+        } else {
+          err.innerText = "Password salah!";
+          err.style.display = "block";
+        }
+      } catch (e) {
+        err.innerText = "Password salah!";
+        err.style.display = "block";
+      }
+    }
+  <\/script>
+</body>
+</html>`;
+
+    document.getElementById('fullHtmlOutput').value = standaloneHtml;
+    document.getElementById('outputSection').style.display = 'block';
+  }
+
+  function copyCipher() {
+    const copyText = document.getElementById("encryptedCipher");
+    copyText.select();
+    document.execCommand("copy");
+    alert("Teks acak berhasil disalin!");
+  }
+
+  function copyFullHtml() {
+    const copyText = document.getElementById("fullHtmlOutput");
+    copyText.select();
+    document.execCommand("copy");
+    alert("Kode HTML Terkunci berhasil disalin!");
+  }
+
+  function downloadHtml() {
+    const text = document.getElementById("fullHtmlOutput").value;
+    const blob = new Blob([text], { type: "text/html" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "halaman-terkunci.html";
+    a.click();
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,484 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Parser Assistant</title>
+    <style>
+        :root {
+            --bg: #121212; 
+            --panel: #1e1e1e; 
+            --text: #e0e0e0; 
+            --border: #2d2d2d;
+            --btn-bg: #2a2a2a; 
+            --primary: #4caf50; 
+            --accent-grey: #a0a0a0; 
+            --code-green: #66bb6a; 
+            --code-quote: #ffffff;
+            --code-orange: #ff9800; /* Warna Oranye untuk Separator */
+            --violet-glow: #d8b4fe; /* Violet/Ungu Nyala untuk 手手て dan て手手 */
+        }
+        body {
+            margin: 0; padding: 0; background: var(--bg); color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        header { 
+            padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid var(--border); background: var(--panel);
+        }
+        h1 { margin: 0; font-size: 1.1rem; color: var(--text); font-weight: 600; letter-spacing: normal; }
+
+        main { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+            padding-bottom: 60vh; 
+            scroll-behavior: smooth;
+        }
+        .section-label { font-size: 0.75rem; font-weight: 600; color: var(--accent-grey); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .card { background: var(--panel); border: 1px solid var(--border); padding: 16px; border-radius: 10px; margin-bottom: 20px; }
+        
+        .editor-area {
+            width: 100%; min-height: 200px; background: #141414; color: #fff; border: 1px solid var(--border); 
+            padding: 14px; border-radius: 8px; font-size: 0.95rem; line-height: 1.6;
+            box-sizing: border-box; overflow-y: auto; outline: none; white-space: pre-wrap;
+            font-family: monospace;
+        }
+        #raw-input { height: 180px; resize: none; }
+        #standards-text { height: 320px; resize: vertical; display: block; }
+        #standards-ide { height: 320px; display: none; overflow-y: auto; user-select: text; }
+
+        /* Highlight Classes untuk Tampilan IDE Read-Only */
+        .hl-cmd { color: var(--code-green); font-weight: normal; }
+        .hl-str { color: var(--code-quote); font-weight: 500; }
+        .hl-sep { color: var(--code-orange); font-weight: normal; }
+        .hl-violet { 
+            color: var(--violet-glow); 
+            font-weight: bold;
+            background: transparent;
+            padding: 0;
+            border: none;
+        }
+
+        .collective-box { 
+            background: #141414; border: 1px solid var(--border);
+            border-left: 4px solid var(--primary); padding: 16px; border-radius: 6px;
+            min-height: 180px; line-height: 1.7; font-size: 0.95rem; color: #fff; outline: none;
+            overflow-wrap: break-word; white-space: pre-wrap;
+        }
+
+        .node-segment { margin-bottom: 12px; }
+        .node-segment:last-child { margin-bottom: 0; }
+        
+        .multi-result-line {
+            display: block;
+            margin-top: 6px;
+            color: var(--code-quote);
+            font-weight: 500;
+            white-space: pre-wrap;
+        }
+
+        .ai-text { color: var(--accent-grey); }
+        .user-text { color: #fff; }
+        .token-mark { font-size: 0.75rem; opacity: 0.4; margin-left: 4px; font-style: normal; background: rgba(255,255,255,0.08); padding: 2px 5px; border-radius: 4px; }
+        .code-hidden .token-mark { display: none; }
+
+        nav { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            height: 60px; background: var(--panel); 
+            display: flex; border-top: 1px solid var(--border); z-index: 1000; 
+        }
+        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--accent-grey); font-size: 0.8rem; cursor: pointer; font-weight: 500; transition: 0.2s; }
+        .nav-btn.active { color: var(--primary); border-top: 2px solid var(--primary); }
+
+        button { padding: 10px 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit; transition: 0.2s; font-size: 0.85rem; }
+        button:active { opacity: 0.8; }
+        .btn-n3 { background: var(--primary); color: #fff; flex: 2; }
+        .btn-toggle { background: var(--btn-bg); color: var(--text); border: 1px solid var(--border); flex: 1; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 12px; }
+        .mode-switch { display: flex; gap: 8px; margin-bottom: 10px; }
+        .mode-btn { background: #222; color: var(--accent-grey); border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; }
+        .mode-btn.active-mode { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+        .bottom-spacer { height: 40vh; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div>
+        <h1>AI Parser</h1>
+        <small id="status" style="color:var(--accent-grey); font-size:0.75rem;">Siap diproses</small>
+    </div>
+</header>
+
+<main id="main-content">
+    <div id="tab-engine">
+        <span class="section-label">Input Teks / Kode</span>
+        <div class="card">
+            <textarea id="raw-input" class="editor-area" placeholder="Masukkan teks atau kode...">Karin so2 + sp4 Rs Karin so4w5</textarea>
+            <div class="btn-group">
+                <button class="btn-n3" onclick="runEngine()">Proses Teks</button>
+                <button class="btn-toggle" onclick="toggleCode()" id="view-btn">Sembunyikan Kode</button>
+            </div>
+        </div>
+
+        <span class="section-label">Hasil Terjemahan</span>
+        <div id="output-box" class="collective-box" contenteditable="true">
+            <span style="color:#666;">Menunggu input...</span>
+        </div>
+    </div>
+
+    <div id="tab-standards" style="display:none;">
+        <span class="section-label">Database Kode (Standards)</span>
+        <div class="card">
+            <!-- Mode Switcher -->
+            <div class="mode-switch">
+                <button class="mode-btn active-mode" id="btn-mode-plain" onclick="switchEditorMode('plain')">Edit Biasa</button>
+                <button class="mode-btn" id="btn-mode-ide" onclick="switchEditorMode('ide')">Nyalakan IDE</button>
+            </div>
+
+            <!-- Mode 1: Textarea Biasa -->
+            <textarea id="standards-text" class="editor-area" spellcheck="false" oninput="onStandardsChange()" placeholder="Ketik aturan di sini..."></textarea>
+            
+            <!-- Mode 2: IDE Editor Berwarna (Read-Only) -->
+            <div id="standards-ide" class="editor-area" contenteditable="false"></div>
+
+            <p style="font-size: 0.75rem; color: var(--accent-grey); margin-top: 8px;">Format: /code="kunci"/= nilai</p>
+        </div>
+    </div>
+
+    <div class="bottom-spacer"></div>
+</main>
+
+<nav>
+    <div class="nav-btn active" onclick="switchTab('engine')">Pemproses</div>
+    <div class="nav-btn" onclick="switchTab('standards')">Database Kode</div>
+</nav>
+
+<script>
+    let defaultStandards = `/手手て/separator="+" /===
+/code="sp"+"so"/= 手手てSecara pribadi dan publik, dia memang jaga image banget sih.て手手
+/code="sp{[1-9]}"+"so{[1-9]}"/= 手手てSecara pribadi dan publik, 
+dia memang jaga image banget sih.
+
+Asli, orang pinter itu. Bang, 
+kenapa spasinya masih gak bisa?て手手
+/code="sp"/= secara pribadi
+/code="sx"/= secara dekat
+/code="so"/= secara meluas
+/code="Me"/= aku
+/code="You"/= kamu
+/code="Ry"/= sebenarnya, 
+/code="Rs"/= sehingga, 
+/code="RyRs"/= maka dari itu,
+/code="RsRy"/= seharusnya, 
+/code="-Past"/= pernah
+/code="-Present"/= sedang
+/code="-Future"/= akan
+/code="8"/= bertindak
+/code="9"/= menjaga situasi
+/code="1"/= mengamati sinyal-sinyal
+/code="2"/= berkomunikasi
+/code="3"/= berkontribusi pada lingkungan sekitar
+/code="4"/= menciptakan seni
+/code="5"/= mengobservasi
+/code="6"/= mempertimbangkan
+/code="7"/= mencari tahu
+
+// KODE WINGS (wX)
+/code="w8"/= dengan bertindak secara fisik/praktek langsung
+/code="w9"/= dengan menjaga situasi
+/code="w1"/= dengan mengamati sinyal-sinyal
+/code="w2"/= dengan memahami komunikasinya
+/code="w3"/= dengan mengamati lingkungan sekitar
+/code="w4"/= dengan ciri khasnya
+/code="w5"/= dengan mengobservasi
+/code="w6"/= dengan melakukan pertimbangan rasional
+/code="w7"/= dengan mencari tahu
+
+// KODE TRANSPOSISI DISINTEGRASI (♭/b)
+/code="b1"/= sampai terkadang menyesuaikannya sedikit. 
+/code="b2"/= , hingga progress ketika melakukannya adalah hal yang penting. 
+/code="b3"/= , dan dalam hal itu menjaga prosesnya agar tetap stabil adalah hal yang penting. 
+/code="b4"/= menggunakan pengalaman selama ini. 
+/code="b5"/= , dan masih berusaha mempertahankannya meski situasinya agak menuntut.
+
+// KODE TRANSPOSISI INTEGRASI (♯/#)
+/code="#1"/= , dan mencoba mengujinya. 
+/code="#2"/= , dan mencoba melakukan hal yang klise dengannya. 
+/code="#3"/= , dan mencoba menstabilkannya. 
+/code="#4"/= , dan mencoba menghasilkan keuntungan darinya. 
+/code="#5"/= , dan secara intensif mencoba mendapatkan keuntungan darinya.
+
+// Kode prism (P/〜)
+/code="9P4"/= Juga, kesadaran dari tubuh diperlukan untuk berpikir kreatif, sehingga tubuhlah yang memfasilitasi pemikiran kreatif. 
+/code="9xP4"/= Juga, kesadaran dari tubuh diperlukan untuk berpikir kreatif. Namun, kali ini tubuh tampaknya kurang sehat, sehingga memerlukan istirahat. 
+/code="9Px4"/= Juga, kesadaran dari tubuh diperlukan untuk berpikir kreatif. Tapi, tolonglah kreativitasnya jangan terlalu memaksa ya! Tolong diperhatikan permintaannya, jangan terlalu rumit. Tubuh sebenarnya bisa, kamunya aja yang ruwet. 
+/code="9xPx4"/= Kesadaran dari tubuh diperlukan untuk berpikir kreatif memanglah penting. Tapi, kenapa kamu malah membuat karya yang begitu rumit, padahal tubuhmu sendiri sedang tidak mampu? Tolonglah, itu berat tau! Kamu gaada perubahan sedikitpun kali ini. 
+/code="x"/= gagal
+
+// KODE BATSU (♭/b)
+/code="bx1"/= namun sepertinya masih ada kendala saat mencoba kembali. 
+/code="bx2"/= , namun tampaknya gagal mengingat cara melakukannya. 
+/code="bx3"/= , namun masih gagal menjaga prosesnya agar tetap stabil. 
+/code="bx4"/= namun masih gagal menyalurkan pengalamannya selama ini. 
+/code="bx5"/= , namun masih gagal mempertahankannya di situasi yang menuntut.
+===/separator/て手手/`;
+
+    let standards = {};
+    let activeSeparator = "[]";
+    let multiRules = [];
+    let isCodeHidden = false;
+
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function cleanUnicodeMarkers(str) {
+        if (!str) return "";
+        return str.replace(/手手て/g, '').replace(/て手手/g, '').trim();
+    }
+
+    function switchEditorMode(mode) {
+        const textEl = document.getElementById('standards-text');
+        const ideEl = document.getElementById('standards-ide');
+        const btnPlain = document.getElementById('btn-mode-plain');
+        const btnIde = document.getElementById('btn-mode-ide');
+
+        if (mode === 'plain') {
+            textEl.style.display = 'block';
+            ideEl.style.display = 'none';
+            btnPlain.classList.add('active-mode');
+            btnIde.classList.remove('active-mode');
+        } else {
+            renderIDEMode();
+            textEl.style.display = 'none';
+            ideEl.style.display = 'block';
+            btnPlain.classList.remove('active-mode');
+            btnIde.classList.add('active-mode');
+        }
+    }
+
+    function onStandardsChange() {
+        parseStandards();
+    }
+
+    function parseStandards() {
+        const rawText = document.getElementById('standards-text').value;
+        standards = {};
+        multiRules = [];
+        activeSeparator = "[]";
+
+        const sepMatch = rawText.match(/separator="([^"]+)"/i);
+        if (sepMatch && sepMatch[1]) {
+            activeSeparator = sepMatch[1];
+        }
+
+        const ruleRegex = /\/code=((?:"[^"]+"\+?)+)\/=\s*([\s\S]*?)(?=(?:\r?\n\/code=|\r?\n\/\/|\r?\n===\/|\s*$))/g;
+        
+        let match;
+        while ((match = ruleRegex.exec(rawText)) !== null) {
+            const rawTokens = match[1];
+            const rawVal = match[2];
+            
+            const cleanVal = rawVal.split(/\n\/\//)[0];
+            const cleanedValue = cleanUnicodeMarkers(cleanVal);
+            const tokens = [...rawTokens.matchAll(/"([^"]+)"/g)].map(m => m[1]);
+
+            if (tokens.length > 1 && cleanedValue) {
+                multiRules.push({ tokens, resultText: cleanedValue });
+            } else if (tokens.length === 1 && cleanedValue) {
+                standards[tokens[0]] = cleanedValue;
+            }
+        }
+    }
+
+    function escapeHtml(text) {
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function renderIDEMode() {
+        const rawText = document.getElementById('standards-text').value;
+        const ideEl = document.getElementById('standards-ide');
+
+        let htmlLines = rawText.split('\n').map(line => {
+            if (line.trim().startsWith('//')) {
+                return `<span style="color:#777; font-style:italic;">${escapeHtml(line)}</span>`;
+            }
+
+            let escaped = escapeHtml(line);
+
+            // Highlight Violet Markers (Teks polos tanpa background/border)
+            escaped = escaped.replace(/(手手て|て手手)/g, '<span class="hl-violet">$1</span>');
+
+            // Highlight Command /code= dan /=
+            escaped = escaped.replace(/(\/code=|\/=)/g, '<span class="hl-cmd">$1</span>');
+
+            // Highlight Separator Syntax
+            escaped = escaped.replace(/(\/?separator=&quot;[^&quot;]*&quot;\/?(?:===)?|===\/separator\/)/gi, '<span class="hl-sep">$1</span>');
+
+            // Highlight String "..."
+            escaped = escaped.replace(/&quot;([^&quot;]+)&quot;/g, '&quot;<span class="hl-str">$1</span>&quot;');
+
+            return escaped;
+        });
+
+        ideEl.innerHTML = htmlLines.join('<br>');
+    }
+
+    function initStandardsEditor() {
+        document.getElementById('standards-text').value = defaultStandards;
+        parseStandards();
+    }
+
+    function tokenToExactRegex(tokenPattern) {
+        let regexPattern = tokenPattern.replace(/\{([^}]+)\}/g, '$1');
+        
+        let parts = regexPattern.split(/(\[[^\]]+\])/);
+        let escapedParts = parts.map(part => {
+            if (part.startsWith('[') && part.endsWith(']')) return part;
+            return escapeRegExp(part);
+        }).join('');
+
+        return new RegExp(`(?:^|[^a-zA-Z0-9])${escapedParts}(?![0-9])(?:$|[^a-zA-Z0-9]|w[1-9]|♭|♯|#|b|P|~)`);
+    }
+
+    function containsToken(text, tokenPattern) {
+        const regex = tokenToExactRegex(tokenPattern);
+        return regex.test(text);
+    }
+
+    function runEngine() {
+        const raw = document.getElementById('raw-input').value.trim();
+        if(!raw) return;
+
+        const box = document.getElementById('output-box');
+        box.innerHTML = "";
+
+        const lines = raw.split('\n');
+
+        lines.forEach((line) => {
+            const container = document.createElement('div');
+            container.className = "node-segment";
+            
+            let nodes = [line];
+            if (activeSeparator && line.includes(activeSeparator)) {
+                const escapedSep = escapeRegExp(activeSeparator);
+                const splitRegex = new RegExp(`\\s*${escapedSep}\\s*`);
+                nodes = line.split(splitRegex).map(n => n.trim());
+            }
+            
+            nodes.forEach((nodeContent, nIdx) => {
+                if (!nodeContent) return;
+
+                const nodeSpan = document.createElement('span');
+
+                let matchedMultiTexts = [];
+                for (let rule of multiRules) {
+                    const isMatched = rule.tokens.every(token => containsToken(nodeContent, token));
+                    if (isMatched) {
+                        const tokenLabel = rule.tokens.map(t => `"${t}"`).join('+');
+                        matchedMultiTexts.push({
+                            label: `[${tokenLabel}]`,
+                            text: rule.resultText
+                        });
+                    }
+                }
+
+                const sortedKeys = Object.keys(standards).sort((a, b) => b.length - a.length);
+                if(sortedKeys.length > 0) {
+                    const escapedKeys = sortedKeys.map(k => escapeRegExp(k));
+                    const regex = new RegExp(`(\\((?:${escapedKeys.join('|')})\\)|${escapedKeys.join('|')})`, 'g');
+                    
+                    let parts = nodeContent.split(regex);
+                    parts.forEach(part => {
+                        let cleanKey = part;
+                        if (part.startsWith('(') && part.endsWith(')')) {
+                            cleanKey = part.slice(1, -1);
+                        }
+
+                        if(standards[cleanKey]) {
+                            const span = document.createElement('span');
+                            span.className = 'ai-text';
+                            span.innerHTML = `${standards[cleanKey]}<span class="token-mark">[${cleanKey}]</span> `;
+                            nodeSpan.appendChild(span);
+                        } else if(part !== "") {
+                            const span = document.createElement('span');
+                            span.className = 'user-text';
+                            span.innerText = part;
+                            nodeSpan.appendChild(span);
+                        }
+                    });
+                } else {
+                    const span = document.createElement('span');
+                    span.className = 'user-text';
+                    span.innerText = nodeContent;
+                    nodeSpan.appendChild(span);
+                }
+
+                container.appendChild(nodeSpan);
+
+                matchedMultiTexts.forEach(multi => {
+                    const multiDiv = document.createElement('div');
+                    multiDiv.className = 'multi-result-line';
+                    
+                    const labelSpan = document.createElement('span');
+                    labelSpan.className = 'token-mark';
+                    labelSpan.innerText = multi.label;
+
+                    const aiSpan = document.createElement('span');
+                    aiSpan.className = 'ai-text';
+                    aiSpan.innerText = multi.text + " ";
+                    aiSpan.appendChild(labelSpan);
+
+                    multiDiv.appendChild(aiSpan);
+                    container.appendChild(multiDiv);
+                });
+
+                if (nIdx < nodes.length - 1) {
+                    const space = document.createElement('span');
+                    space.innerText = ` ${activeSeparator} `;
+                    space.style.color = 'var(--code-orange)';
+                    container.appendChild(space);
+                }
+            });
+
+            box.appendChild(container);
+        });
+
+        document.getElementById('status').innerText = "Selesai diproses";
+        setTimeout(() => {
+            box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    }
+
+    function switchTab(t) {
+        document.getElementById('tab-engine').style.display = t === 'engine' ? 'block' : 'none';
+        document.getElementById('tab-standards').style.display = t === 'standards' ? 'block' : 'none';
+        document.querySelectorAll('.nav-btn').forEach((btn, i) => {
+            btn.classList.toggle('active', (t === 'engine' && i === 0) || (t === 'standards' && i === 1));
+        });
+        if(t === 'standards') {
+            parseStandards();
+        }
+    }
+
+    function toggleCode() {
+        isCodeHidden = !isCodeHidden;
+        document.getElementById('output-box').classList.toggle('code-hidden', isCodeHidden);
+        document.getElementById('view-btn').innerText = isCodeHidden ? "Tampilkan Kode" : "Sembunyikan Kode";
+    }
+
+    window.onload = function() {
+        initStandardsEditor();
+        runEngine();
+    };
+</script>
+</body>
+</html>
